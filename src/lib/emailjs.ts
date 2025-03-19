@@ -5,6 +5,25 @@ const SERVICE_ID = 'itzhapy@gmail.com';
 const TEMPLATE_ID = 'template_f5rh7n9';
 const PUBLIC_KEY = 'B6EzNeSIjQOTyWOLO';
 
+// Function to generate order ID starting from 1000
+const generateOrderId = (existingOrders: string[] = []): string => {
+  // If no existing orders, start from 1000
+  if (!existingOrders.length) {
+    return '1000';
+  }
+  
+  // Find the highest order ID and increment by 1
+  const highestId = Math.max(...existingOrders.map(id => parseInt(id, 10)));
+  return (highestId + 1).toString();
+};
+
+// Helper function to get existing orders (placeholder - implement as needed)
+const getOrders = (): string[] => {
+  // This should be implemented to retrieve existing order IDs
+  // For now, return empty array as placeholder
+  return [];
+};
+
 interface OrderEmailData {
   customerName: string;
   city: string;
@@ -17,8 +36,8 @@ interface OrderEmailData {
 
 export const sendOrderEmail = async (data: OrderEmailData): Promise<boolean> => {
   try {
-    // Use provided order ID or generate one
-    const orderId = data.orderId ? data.orderId : `${Date.now().toString().slice(-6)}`;
+    // Use provided order ID or generate one starting from 1000
+    const orderId = data.orderId || generateOrderId(getOrders());
     const orderDate = new Date().toLocaleDateString('ar-LY');
     const orderTime = new Date().toLocaleTimeString('ar-LY');
     

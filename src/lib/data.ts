@@ -24,6 +24,13 @@ export interface Order {
   totalPrice: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'suspended';
   date: string;
+  hasWishlist?: boolean; // Flag to indicate if user has items in wishlist
+}
+
+// Interface for wishlist items
+export interface WishlistItem {
+  userId: string; // Phone number as user identifier
+  productIds: string[];
 }
 
 // Sample categories data
@@ -335,6 +342,16 @@ export const getOrders = (): Order[] => {
   }
 };
 
+// Helper function to generate consistent order IDs starting from 1000
+const generateOrderId = (currentOrders: Order[]): string => {
+  let newOrderId = 1000; // Start from 1000
+  if (currentOrders.length > 0) {
+    const highestId = Math.max(...currentOrders.map((order) => parseInt(order.id, 10)));
+    newOrderId = Math.max(highestId + 1, 1000); // Ensure we never go below 1000
+  }
+  return newOrderId.toString();
+};
+
 export const saveOrder = (order: Omit<Order, 'date' | 'status'> & { id?: string }): Order | null => {
   try {
     const currentOrders = getOrders();
@@ -346,25 +363,8 @@ export const saveOrder = (order: Omit<Order, 'date' | 'status'> & { id?: string 
       // Use the provided ID
       orderId = order.id;
     } else {
-      // Generate a new order ID starting from 100
-      let newOrderId = 100;
-      
-      // Find the highest existing order ID and increment by 1
-      if (currentOrders.length > 0) {
-        const orderIds = currentOrders
-          .map(order => {
-            // Extract numeric part of the order ID
-            const idNumber = parseInt(order.id, 10);
-            return isNaN(idNumber) ? 100 : idNumber;
-          })
-          .filter(id => !isNaN(id));
-        
-        if (orderIds.length > 0) {
-          newOrderId = Math.max(...orderIds) + 1;
-        }
-      }
-      
-      orderId = newOrderId.toString();
+      // Generate a new order ID starting from 1000
+      orderId = generateOrderId(currentOrders);
     }
     
     const newOrder: Order = {
@@ -426,6 +426,97 @@ export const updateOrderStatus = (
   } catch (error) {
     console.error('Error updating order status:', error);
     return null;
+  }
+};
+
+// Wishlist management functions
+export const getWishlist = (userId: string): string[] => {
+  try {
+    const wishlistKey = `wishlist_${userId.replace(/\D/g, '')}`;
+    const storedWishlist = localStorage.getItem(wishlistKey);
+    
+    if (!storedWishlist) {
+      return [];
+    }
+    
+    return JSON.parse(storedWishlist);
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    return [];
+  }
+};
+
+export const saveWishlist = (userId: string, productIds: string[]): boolean => {
+  try {
+    const wishlistKey = `wishlist_${userId.replace(/\D/g, '')}`;
+    localStorage.setItem(wishlistKey, JSON.stringify(productIds));
+    
+    // Update the hasWishlist flag for all orders with this user's phone number
+    updateOrdersWithWishlistFlag(userId);
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving wishlist:', error);
+    return false;
+  }
+};
+
+export const addToWishlist = (userId: string, productId: string): boolean => {
+  try {
+    const currentWishlist = getWishlist(userId);
+    
+    // Check if product is already in wishlist
+    if (currentWishlist.includes(productId)) {
+      return true; // Already in wishlist
+    }
+    
+    // Add product to wishlist
+    const updatedWishlist = [...currentWishlist, productId];
+    saveWishlist(userId, updatedWishlist);
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    return false;
+  }
+};
+
+export const removeFromWishlist = (userId: string, productId: string): boolean => {
+  try {
+    const currentWishlist = getWishlist(userId);
+    const updatedWishlist = currentWishlist.filter(id => id !== productId);
+    saveWishlist(userId, updatedWishlist);
+    
+    return true;
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    return false;
+  }
+};
+
+// Update all orders for a user with the wishlist flag
+export const updateOrdersWithWishlistFlag = (userId: string): void => {
+  try {
+    const currentOrders = getOrders();
+    const normalizedUserId = userId.replace(/\D/g, '');
+    const wishlist = getWishlist(userId);
+    const hasWishlist = wishlist.length > 0;
+    
+    // Update all orders with matching phone number
+    const updatedOrders = currentOrders.map(order => {
+      if (order.phone.replace(/\D/g, '').includes(normalizedUserId)) {
+        return {
+          ...order,
+          hasWishlist
+        };
+      }
+      return order;
+    });
+    
+    // Save updated orders
+    localStorage.setItem('orders', JSON.stringify(updatedOrders));
+  } catch (error) {
+    console.error('Error updating orders with wishlist flag:', error);
   }
 };
 

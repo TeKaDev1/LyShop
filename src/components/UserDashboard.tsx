@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getOrders, getProducts, Product, Order } from '@/lib/data';
+import { getOrders, getProducts, Product, Order, addToWishlist, removeFromWishlist, getWishlist } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 import { ArrowRight, Package, ShoppingBag, LogOut, Heart, Plus, X } from 'lucide-react';
 import ProductCard from './ProductCard';
@@ -17,13 +17,15 @@ const UserDashboard: React.FC = () => {
   const [productIdInput, setProductIdInput] = useState<string>('');
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in - but don't navigate away
+    // The parent UserAccount component already handles conditional rendering
     const isLoggedIn = sessionStorage.getItem('userLoggedIn') === 'true';
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName');
 
     if (!isLoggedIn || !userId) {
-      navigate('/user-login');
+      // Instead of navigating, we'll just return early and let the parent component handle it
+      setLoading(false);
       return;
     }
 
@@ -71,18 +73,14 @@ const UserDashboard: React.FC = () => {
       // Limit to 4 recommendations
       setRecommendedProducts(recommendations.slice(0, 4));
       
-      // Load wishlist from localStorage using phone number
-      const userPhone = sessionStorage.getItem('userPhone');
+      // Load wishlist using the new getWishlist function
       if (userPhone) {
-        const savedWishlist = localStorage.getItem(`wishlist_${userPhone.replace(/\D/g, '')}`);
-        if (savedWishlist) {
-          try {
-            const wishlistIds = JSON.parse(savedWishlist) as string[];
-            const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
-            setWishlist(wishlistProducts);
-          } catch (error) {
-            console.error('Error loading wishlist:', error);
-          }
+        try {
+          const wishlistIds = getWishlist(userPhone);
+          const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+          setWishlist(wishlistProducts);
+        } catch (error) {
+          console.error('Error loading wishlist:', error);
         }
       }
     }
@@ -90,15 +88,27 @@ const UserDashboard: React.FC = () => {
     setLoading(false);
   }, [navigate]);
   
-  // Add product to wishlist
-  const addToWishlist = (productId: string) => {
+  // Add product to wishlist using the new function
+  const addProductToWishlist = (productId: string) => {
     const allProducts = getProducts();
-    const product = allProducts.find(p => p.id === productId);
+    
+    // Try to find the product by exact ID first
+    let product = allProducts.find(p => p.id === productId);
+    
+    // If not found, try to find by partial ID match
+    if (!product) {
+      product = allProducts.find(p => p.id.includes(productId));
+    }
+    
+    // If still not found, try to find by name containing the input
+    if (!product) {
+      product = allProducts.find(p => p.name.includes(productId));
+    }
     
     if (!product) {
       toast({
         title: "خطأ",
-        description: "لم يتم العثور على المنتج",
+        description: "لم يتم العثور على المنتج. تأكد من إدخال رقم المنتج أو اسمه بشكل صحيح",
         variant: "destructive",
       });
       return;
@@ -114,47 +124,79 @@ const UserDashboard: React.FC = () => {
       return;
     }
     
-    const newWishlist = [...wishlist, product];
-    setWishlist(newWishlist);
-    
-    // Save to localStorage - store only the IDs
     const userPhone = sessionStorage.getItem('userPhone');
-    if (userPhone) {
-      const wishlistIds = newWishlist.map(p => p.id);
-      localStorage.setItem(`wishlist_${userPhone.replace(/\D/g, '')}`, JSON.stringify(wishlistIds));
+    if (!userPhone) {
+      toast({
+        title: "خطأ",
+        description: "لم يتم العثور على معلومات المستخدم",
+        variant: "destructive",
+      });
+      return;
     }
     
-    toast({
-      title: "تمت الإضافة",
-      description: "تمت إضافة المنتج إلى قائمة الرغبات",
-    });
+    // Add to wishlist using the new function
+    const success = addToWishlist(userPhone, productId);
     
-    setProductIdInput('');
-    setShowWishlistInput(false);
+    if (success) {
+      // Update local state
+      setWishlist([...wishlist, product]);
+      
+      toast({
+        title: "تمت الإضافة",
+        description: "تمت إضافة المنتج إلى قائمة الرغبات",
+      });
+      
+      setProductIdInput('');
+      setShowWishlistInput(false);
+    } else {
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة المنتج إلى قائمة الرغبات",
+        variant: "destructive",
+      });
+    }
   };
   
-  // Remove product from wishlist
-  const removeFromWishlist = (productId: string) => {
-    const newWishlist = wishlist.filter(p => p.id !== productId);
-    setWishlist(newWishlist);
-    
-    // Save to localStorage
+  // Remove product from wishlist using the new function
+  const removeProductFromWishlist = (productId: string) => {
     const userPhone = sessionStorage.getItem('userPhone');
-    if (userPhone) {
-      localStorage.setItem(`wishlist_${userPhone.replace(/\D/g, '')}`, JSON.stringify(newWishlist.map(p => p.id)));
+    if (!userPhone) {
+      toast({
+        title: "خطأ",
+        description: "لم يتم العثور على معلومات المستخدم",
+        variant: "destructive",
+      });
+      return;
     }
     
-    toast({
-      title: "تمت الإزالة",
-      description: "تمت إزالة المنتج من قائمة الرغبات",
-    });
+    // Remove from wishlist using the new function
+    const success = removeFromWishlist(userPhone, productId);
+    
+    if (success) {
+      // Update local state
+      setWishlist(wishlist.filter(p => p.id !== productId));
+      
+      toast({
+        title: "تمت الإزالة",
+        description: "تمت إزالة المنتج من قائمة الرغبات",
+      });
+    } else {
+      toast({
+        title: "خطأ",
+        description: "فشل في إزالة المنتج من قائمة الرغبات",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle add to wishlist form submission
   const handleAddToWishlist = (e: React.FormEvent) => {
     e.preventDefault();
     if (productIdInput.trim()) {
-      addToWishlist(productIdInput.trim());
+      const userPhone = sessionStorage.getItem('userPhone');
+      if (userPhone) {
+        addProductToWishlist(productIdInput.trim());
+      }
     }
   };
 
@@ -425,7 +467,7 @@ const UserDashboard: React.FC = () => {
               <div key={product.id} className="relative group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
                 <div className="absolute top-2 left-2 z-10">
                   <button
-                    onClick={() => removeFromWishlist(product.id)}
+                    onClick={() => removeProductFromWishlist(product.id)}
                     className="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"
                     aria-label="إزالة من قائمة الرغبات"
                   >

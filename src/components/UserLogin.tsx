@@ -40,39 +40,32 @@ const UserLogin: React.FC = () => {
       order => order.phone.replace(/\D/g, '').includes(phone.replace(/\D/g, ''))
     );
     
-    setTimeout(() => {
       if (matchingOrder) {
-        // Store user info in session storage
-        sessionStorage.setItem('userLoggedIn', 'true');
-        sessionStorage.setItem('userPhone', matchingOrder.phone);
-        sessionStorage.setItem('userName', matchingOrder.customerName);
-        
-        // Store the current order ID but don't limit the dashboard to only show this order
-        // The UserDashboard component will show all orders with the same phone number
-        sessionStorage.setItem('userId', matchingOrder.id);
-        
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: userOrders.length > 1
-            ? `تم العثور على ${userOrders.length} طلبات مرتبطة برقم هاتفك`
-            : "جاري تحويلك إلى لوحة التحكم...",
-          variant: "default",
-        });
-        
-        // Navigate to user dashboard using React Router
         setTimeout(() => {
-          // Redirect to homepage instead of user-dashboard if there's an issue
-          try {
-            navigate('/user-account');
-          } catch (error) {
-            console.error('Navigation error:', error);
-            navigate('/');
-            toast({
-              title: "تم تسجيل الدخول بنجاح",
-              description: "مرحباً بك في متجر ليبيا شوبر",
-              variant: "default",
-            });
-          }
+          // Store user info in session storage
+          sessionStorage.setItem('userLoggedIn', 'true');
+          sessionStorage.setItem('userPhone', matchingOrder.phone);
+          sessionStorage.setItem('userName', matchingOrder.customerName);
+          
+          // Store the current order ID but don't limit the dashboard to only show this order
+          // The UserDashboard component will show all orders with the same phone number
+          sessionStorage.setItem('userId', matchingOrder.id);
+          
+          toast({
+            title: "تم تسجيل الدخول بنجاح",
+            description: userOrders.length > 1
+              ? `تم العثور على ${userOrders.length} طلبات مرتبطة برقم هاتفك`
+              : "جاري تحويلك إلى لوحة التحكم...",
+            variant: "default",
+          });
+          
+          // Update the parent component state
+          window.dispatchEvent(new Event('userLoggedIn'));
+          
+          // Navigate to user dashboard directly to ensure proper state update
+          navigate('/user-dashboard');
+          
+          setLoading(false);
         }, 1000);
       } else {
         toast({
@@ -80,9 +73,8 @@ const UserLogin: React.FC = () => {
           description: "رقم الهاتف أو رقم الطلب غير صحيح",
           variant: "destructive",
         });
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
   };
 
   return (

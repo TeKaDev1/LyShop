@@ -47,8 +47,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/user-account" element={<UserAccount />} />
               <Route path="/user-login" element={<UserAccount />} />
-              {/* Redirect /user-dashboard to / to fix 404 error */}
-              <Route path="/user-dashboard" element={<Index />} />
+              {/* Redirect /user-dashboard to /user-account to ensure proper handling */}
+              <Route path="/user-dashboard" element={<UserAccount />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

@@ -7,7 +7,7 @@ import {
   generateCustomWhatsAppLink
 } from '@/lib/telegram';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, MessageCircle, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowRight, MessageCircle, ExternalLink, Trash2, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -241,6 +241,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
                   <th className="text-right py-3 px-4">المبلغ</th>
                   <th className="text-right py-3 px-4">الحالة</th>
                   <th className="text-right py-3 px-4">التاريخ</th>
+                  <th className="text-right py-3 px-4">قائمة الرغبات</th>
                   <th className="text-right py-3 px-4">إجراءات</th>
                 </tr>
               </thead>
@@ -273,6 +274,15 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
                       </select>
                     </td>
                     <td className="py-3 px-4">{order.date}</td>
+                    <td className="py-3 px-4 text-center">
+                      {order.hasWishlist ? (
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full" title="العميل لديه منتجات في قائمة الرغبات">
+                          <Heart size={16} />
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-600">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex space-x-2 space-x-reverse">
                         <button
