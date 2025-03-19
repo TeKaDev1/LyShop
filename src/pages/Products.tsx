@@ -101,7 +101,7 @@ const Products: React.FC = () => {
               <input
                 type="text"
                 placeholder="ابحث عن منتج..."
-                className="w-full pl-4 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full pl-4 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -111,7 +111,7 @@ const Products: React.FC = () => {
                 <select
                   value={selectedCategory || 'الكل'}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="appearance-none w-full bg-white border border-gray-200 py-3 px-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="appearance-none w-full bg-white border border-gray-200 py-3 px-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
                 >
                   {categories.map((category) => (
                     <option key={category} value={category}>

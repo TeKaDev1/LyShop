@@ -25,6 +25,14 @@ export const sendOrderEmail = async (data: OrderEmailData): Promise<boolean> => 
       SERVICE_ID,
       TEMPLATE_ID,
       {
+        from_name: data.customerName,
+        product_name: data.productDetails,
+        product_price: `${data.totalPrice.toFixed(2)} د.ل`,
+        customer_phone: data.phone,
+        customer_address: `${data.city} - ${data.address}`,
+        notes: "",
+        reply_to: data.phone,
+        // Original parameters for backward compatibility
         to_email: 'itzhapy@gmail.com',
         customer_name: data.customerName,
         city: data.city,
@@ -146,3 +154,18 @@ export const sendOrderEmail = async (data: OrderEmailData): Promise<boolean> => 
  * </div>
  */
 
+/**
+ * Updated EmailJS Template for Arabic Format:
+ * 
+ * {{from_name}},
+ * 
+ * ايصال طلب منتج جديد.
+ * 
+ * **اسم المنتج:** {{product_name}}
+ * **سعر المنتج:** {{product_price}} د.ل
+ * **رقم هاتف الزبون:** {{customer_phone}}
+ * **عنوان الزبون:** {{customer_address}}
+ * **ملاحظات:** {{notes}}
+ * 
+ * Please reply to: {{reply_to}}
+ */

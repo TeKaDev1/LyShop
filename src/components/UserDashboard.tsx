@@ -8,7 +8,8 @@ import ProductCard from './ProductCard';
 const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>('');
-  const [userOrder, setUserOrder] = useState<Order | null>(null);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [selectedOrderIndex, setSelectedOrderIndex] = useState<number>(0);
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [wishlist, setWishlist] = useState<Product[]>([]);
@@ -26,18 +27,32 @@ const UserDashboard: React.FC = () => {
       return;
     }
 
+    // Show success notification when dashboard loads
+    toast({
+      title: "تم تسجيل الدخول بنجاح",
+      description: "مرحباً بك في لوحة التحكم الخاصة بك",
+      variant: "default",
+    });
+
     setUserName(userName || 'العميل');
 
-    // Get user's order
+    // Get all user's orders with the same phone number
     const orders = getOrders();
-    const order = orders.find(order => order.id === userId);
+    const userPhone = sessionStorage.getItem('userPhone');
+    const userOrders = orders.filter(order =>
+      order.phone.replace(/\D/g, '').includes(userPhone?.replace(/\D/g, '') || '')
+    );
 
-    if (order) {
-      setUserOrder(order);
+    if (userOrders.length > 0) {
+      setUserOrders(userOrders);
       
-      // Get product recommendations based on user's order
+      // Get product recommendations based on user's orders
       const allProducts = getProducts();
-      const orderedProductIds = order.products.map(p => p.productId);
+      
+      // Get all ordered product IDs from all orders
+      const orderedProductIds = userOrders.flatMap(order =>
+        order.products.map(p => p.productId)
+      );
       
       // Get ordered products
       const orderedProducts = allProducts.filter(p =>
@@ -56,15 +71,18 @@ const UserDashboard: React.FC = () => {
       // Limit to 4 recommendations
       setRecommendedProducts(recommendations.slice(0, 4));
       
-      // Load wishlist from localStorage
-      const savedWishlist = localStorage.getItem(`wishlist_${userId}`);
-      if (savedWishlist) {
-        try {
-          const wishlistIds = JSON.parse(savedWishlist) as string[];
-          const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
-          setWishlist(wishlistProducts);
-        } catch (error) {
-          console.error('Error loading wishlist:', error);
+      // Load wishlist from localStorage using phone number
+      const userPhone = sessionStorage.getItem('userPhone');
+      if (userPhone) {
+        const savedWishlist = localStorage.getItem(`wishlist_${userPhone.replace(/\D/g, '')}`);
+        if (savedWishlist) {
+          try {
+            const wishlistIds = JSON.parse(savedWishlist) as string[];
+            const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+            setWishlist(wishlistProducts);
+          } catch (error) {
+            console.error('Error loading wishlist:', error);
+          }
         }
       }
     }
@@ -99,10 +117,11 @@ const UserDashboard: React.FC = () => {
     const newWishlist = [...wishlist, product];
     setWishlist(newWishlist);
     
-    // Save to localStorage
-    const userId = sessionStorage.getItem('userId');
-    if (userId) {
-      localStorage.setItem(`wishlist_${userId}`, JSON.stringify(newWishlist.map(p => p.id)));
+    // Save to localStorage - store only the IDs
+    const userPhone = sessionStorage.getItem('userPhone');
+    if (userPhone) {
+      const wishlistIds = newWishlist.map(p => p.id);
+      localStorage.setItem(`wishlist_${userPhone.replace(/\D/g, '')}`, JSON.stringify(wishlistIds));
     }
     
     toast({
@@ -120,9 +139,9 @@ const UserDashboard: React.FC = () => {
     setWishlist(newWishlist);
     
     // Save to localStorage
-    const userId = sessionStorage.getItem('userId');
-    if (userId) {
-      localStorage.setItem(`wishlist_${userId}`, JSON.stringify(newWishlist.map(p => p.id)));
+    const userPhone = sessionStorage.getItem('userPhone');
+    if (userPhone) {
+      localStorage.setItem(`wishlist_${userPhone.replace(/\D/g, '')}`, JSON.stringify(newWishlist.map(p => p.id)));
     }
     
     toast({
@@ -201,40 +220,59 @@ const UserDashboard: React.FC = () => {
         </div>
       </div>
 
-      {userOrder ? (
+      {userOrders.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm mb-8">
-              <div className="flex items-center mb-4">
-                <Package className="ml-2 text-primary" size={24} />
-                <h2 className="text-xl font-bold dark:text-white">تفاصيل الطلب</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <Package className="ml-2 text-primary" size={24} />
+                  <h2 className="text-xl font-bold dark:text-white">تفاصيل الطلب</h2>
+                </div>
+                
+                {userOrders.length > 1 && (
+                  <div className="flex items-center">
+                    <span className="text-sm text-gray-500 ml-2">اختر الطلب:</span>
+                    <select
+                      value={selectedOrderIndex}
+                      onChange={(e) => setSelectedOrderIndex(Number(e.target.value))}
+                      className="p-1 border border-gray-200 rounded dark:bg-white dark:text-gray-900"
+                    >
+                      {userOrders.map((order, index) => (
+                        <option key={order.id} value={index}>
+                          طلب #{order.id} - {order.date}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-4">
                 <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="font-medium dark:text-gray-200">رقم الطلب:</span>
-                  <span className="dark:text-gray-200">#{userOrder.id}</span>
+                  <span className="dark:text-gray-200">#{userOrders[selectedOrderIndex].id}</span>
                 </div>
                 
                 <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="font-medium dark:text-gray-200">تاريخ الطلب:</span>
-                  <span className="dark:text-gray-200">{userOrder.date}</span>
+                  <span className="dark:text-gray-200">{userOrders[selectedOrderIndex].date}</span>
                 </div>
                 
                 <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="font-medium dark:text-gray-200">المبلغ الإجمالي:</span>
-                  <span className="dark:text-gray-200">{userOrder.totalPrice.toFixed(2)} د.ل</span>
+                  <span className="dark:text-gray-200">{userOrders[selectedOrderIndex].totalPrice.toFixed(2)} د.ل</span>
                 </div>
                 
                 <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="font-medium dark:text-gray-200">العنوان:</span>
-                  <span className="dark:text-gray-200">{userOrder.city} - {userOrder.address}</span>
+                  <span className="dark:text-gray-200">{userOrders[selectedOrderIndex].city} - {userOrders[selectedOrderIndex].address}</span>
                 </div>
                 
                 <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="font-medium dark:text-gray-200">حالة الطلب:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(userOrder.status)}`}>
-                    {getStatusLabel(userOrder.status)}
+                  <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(userOrders[selectedOrderIndex].status)}`}>
+                    {getStatusLabel(userOrders[selectedOrderIndex].status)}
                   </span>
                 </div>
               </div>
@@ -249,10 +287,10 @@ const UserDashboard: React.FC = () => {
                       className="h-full bg-primary rounded-full"
                       style={{
                         width:
-                          userOrder.status === 'pending' ? '20%' :
-                          userOrder.status === 'processing' ? '40%' :
-                          userOrder.status === 'shipped' ? '70%' :
-                          userOrder.status === 'delivered' ? '100%' : '0%'
+                          userOrders[selectedOrderIndex].status === 'pending' ? '20%' :
+                          userOrders[selectedOrderIndex].status === 'processing' ? '40%' :
+                          userOrders[selectedOrderIndex].status === 'shipped' ? '70%' :
+                          userOrders[selectedOrderIndex].status === 'delivered' ? '100%' : '0%'
                       }}
                     ></div>
                   </div>
@@ -261,7 +299,7 @@ const UserDashboard: React.FC = () => {
                   <div className="flex justify-between">
                     <div className="text-center">
                       <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                        ['pending', 'processing', 'shipped', 'delivered'].includes(userOrder.status)
+                        ['pending', 'processing', 'shipped', 'delivered'].includes(userOrders[selectedOrderIndex].status)
                           ? 'bg-primary text-white'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}>
@@ -272,7 +310,7 @@ const UserDashboard: React.FC = () => {
                     
                     <div className="text-center">
                       <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                        ['processing', 'shipped', 'delivered'].includes(userOrder.status)
+                        ['processing', 'shipped', 'delivered'].includes(userOrders[selectedOrderIndex].status)
                           ? 'bg-primary text-white'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}>
@@ -283,7 +321,7 @@ const UserDashboard: React.FC = () => {
                     
                     <div className="text-center">
                       <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                        ['shipped', 'delivered'].includes(userOrder.status)
+                        ['shipped', 'delivered'].includes(userOrders[selectedOrderIndex].status)
                           ? 'bg-primary text-white'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}>
@@ -294,7 +332,7 @@ const UserDashboard: React.FC = () => {
                     
                     <div className="text-center">
                       <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center mb-2 ${
-                        userOrder.status === 'delivered'
+                        userOrders[selectedOrderIndex].status === 'delivered'
                           ? 'bg-primary text-white'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}>
@@ -308,11 +346,11 @@ const UserDashboard: React.FC = () => {
               
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg">
                 <p className="text-sm">
-                  {userOrder.status === 'pending' && 'سيتم مراجعة طلبك قريباً وتحديث حالته.'}
-                  {userOrder.status === 'processing' && 'جاري تجهيز طلبك، وسيتم شحنه قريباً.'}
-                  {userOrder.status === 'shipped' && 'تم شحن طلبك وهو في الطريق إليك.'}
-                  {userOrder.status === 'delivered' && 'تم تسليم طلبك بنجاح. نتمنى أن تكون راضياً عن منتجاتنا.'}
-                  {userOrder.status === 'suspended' && 'تم تعليق طلبك. يرجى التواصل مع خدمة العملاء.'}
+                  {userOrders[selectedOrderIndex].status === 'pending' && 'سيتم مراجعة طلبك قريباً وتحديث حالته.'}
+                  {userOrders[selectedOrderIndex].status === 'processing' && 'جاري تجهيز طلبك، وسيتم شحنه قريباً.'}
+                  {userOrders[selectedOrderIndex].status === 'shipped' && 'تم شحن طلبك وهو في الطريق إليك.'}
+                  {userOrders[selectedOrderIndex].status === 'delivered' && 'تم تسليم طلبك بنجاح. نتمنى أن تكون راضياً عن منتجاتنا.'}
+                  {userOrders[selectedOrderIndex].status === 'suspended' && 'تم تعليق طلبك. يرجى التواصل مع خدمة العملاء.'}
                 </p>
               </div>
             </div>
@@ -370,7 +408,7 @@ const UserDashboard: React.FC = () => {
               value={productIdInput}
               onChange={(e) => setProductIdInput(e.target.value)}
               placeholder="أدخل رقم المنتج"
-              className="flex-grow rounded-r-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="flex-grow rounded-r-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <button
               type="submit"

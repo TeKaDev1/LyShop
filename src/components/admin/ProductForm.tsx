@@ -215,7 +215,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                   required
                   value={formData.name || ''}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
 
@@ -227,7 +227,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                   required
                   value={formData.category || ''}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="">اختر الفئة</option>
                   {categories.map(category => (
@@ -247,7 +247,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                 required
                 value={formData.description || ''}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 rows={3}
               />
             </div>
@@ -264,7 +264,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                 value={formData.price || ''}
                 placeholder="0.00"
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
@@ -284,7 +284,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                     placeholder="أدخل رابط الفيديو (YouTube, Vimeo, إلخ)"
                     value={formData.video && !formData.video.startsWith('data:') ? formData.video : ''}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                     disabled={videoFile !== null}
                   />
                   {formData.video && !formData.video.startsWith('data:') && (
@@ -366,7 +366,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                           placeholder={index === 0 ? "رابط الصورة الرئيسية" : `رابط الصورة ${index + 1} (اختياري)`}
                           value={(formData.images && formData.images[index] && !formData.images[index].startsWith('data:')) ? formData.images[index] : ''}
                           onChange={(e) => handleImageChange(index, e.target.value)}
-                          className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                           disabled={imageFiles[index] !== null}
                         />
                         {formData.images && formData.images[index] && !formData.images[index].startsWith('data:') && (

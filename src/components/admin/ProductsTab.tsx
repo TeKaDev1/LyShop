@@ -55,7 +55,7 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ products, categories, refresh
             <input
               type="text"
               placeholder="البحث عن منتج..."
-              className="w-full pl-4 pr-10 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full pl-4 pr-10 py-2 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

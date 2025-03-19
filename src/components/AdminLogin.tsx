@@ -65,7 +65,7 @@ const AdminLogin: React.FC = () => {
                 <input
                   id="username"
                   type="text"
-                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -84,7 +84,7 @@ const AdminLogin: React.FC = () => {
                 <input
                   id="password"
                   type="password"
-                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

@@ -35,23 +35,44 @@ const UserLogin: React.FC = () => {
               order.id === orderId
     );
     
+    // Find all orders with the same phone number
+    const userOrders = orders.filter(
+      order => order.phone.replace(/\D/g, '').includes(phone.replace(/\D/g, ''))
+    );
+    
     setTimeout(() => {
       if (matchingOrder) {
         // Store user info in session storage
         sessionStorage.setItem('userLoggedIn', 'true');
         sessionStorage.setItem('userPhone', matchingOrder.phone);
         sessionStorage.setItem('userName', matchingOrder.customerName);
+        
+        // Store the current order ID but don't limit the dashboard to only show this order
+        // The UserDashboard component will show all orders with the same phone number
         sessionStorage.setItem('userId', matchingOrder.id);
         
         toast({
           title: "تم تسجيل الدخول بنجاح",
-          description: "جاري تحويلك إلى لوحة التحكم...",
+          description: userOrders.length > 1
+            ? `تم العثور على ${userOrders.length} طلبات مرتبطة برقم هاتفك`
+            : "جاري تحويلك إلى لوحة التحكم...",
           variant: "default",
         });
         
-        // Refresh and navigate to user dashboard
+        // Navigate to user dashboard using React Router
         setTimeout(() => {
-          window.location.href = '/user-dashboard';
+          // Redirect to homepage instead of user-dashboard if there's an issue
+          try {
+            navigate('/user-account');
+          } catch (error) {
+            console.error('Navigation error:', error);
+            navigate('/');
+            toast({
+              title: "تم تسجيل الدخول بنجاح",
+              description: "مرحباً بك في متجر ليبيا شوبر",
+              variant: "default",
+            });
+          }
         }, 1000);
       } else {
         toast({
@@ -90,7 +111,7 @@ const UserLogin: React.FC = () => {
                 <input
                   id="phone"
                   type="tel"
-                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="مثال: 0912345678"
@@ -110,7 +131,7 @@ const UserLogin: React.FC = () => {
                 <input
                   id="orderId"
                   type="text"
-                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   placeholder="مثال: 1001"

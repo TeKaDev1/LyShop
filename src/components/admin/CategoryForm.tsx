@@ -62,7 +62,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 

@@ -303,7 +303,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                 required
                 value={formData.customerName}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
               />
             </div>
 
@@ -316,7 +316,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                 required
                 value={formData.city}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
               />
             </div>
 
@@ -328,7 +328,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                 required
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
                 rows={2}
               />
             </div>
@@ -342,7 +342,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                 required
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-white dark:text-gray-900 dark:border-gray-700"
                 placeholder="مثال: 0912345678"
               />
             </div>
