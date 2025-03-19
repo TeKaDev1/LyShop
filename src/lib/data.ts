@@ -335,31 +335,41 @@ export const getOrders = (): Order[] => {
   }
 };
 
-export const saveOrder = (order: Omit<Order, 'id' | 'date' | 'status'>): Order | null => {
+export const saveOrder = (order: Omit<Order, 'date' | 'status'> & { id?: string }): Order | null => {
   try {
     const currentOrders = getOrders();
     
-    // Generate a new order ID starting from 100
-    let newOrderId = 100;
+    // Use provided ID or generate a new one
+    let orderId: string;
     
-    // Find the highest existing order ID and increment by 1
-    if (currentOrders.length > 0) {
-      const orderIds = currentOrders
-        .map(order => {
-          // Extract numeric part of the order ID
-          const idNumber = parseInt(order.id, 10);
-          return isNaN(idNumber) ? 100 : idNumber;
-        })
-        .filter(id => !isNaN(id));
+    if (order.id) {
+      // Use the provided ID
+      orderId = order.id;
+    } else {
+      // Generate a new order ID starting from 100
+      let newOrderId = 100;
       
-      if (orderIds.length > 0) {
-        newOrderId = Math.max(...orderIds) + 1;
+      // Find the highest existing order ID and increment by 1
+      if (currentOrders.length > 0) {
+        const orderIds = currentOrders
+          .map(order => {
+            // Extract numeric part of the order ID
+            const idNumber = parseInt(order.id, 10);
+            return isNaN(idNumber) ? 100 : idNumber;
+          })
+          .filter(id => !isNaN(id));
+        
+        if (orderIds.length > 0) {
+          newOrderId = Math.max(...orderIds) + 1;
+        }
       }
+      
+      orderId = newOrderId.toString();
     }
     
     const newOrder: Order = {
       ...order,
-      id: newOrderId.toString(),
+      id: orderId,
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     };

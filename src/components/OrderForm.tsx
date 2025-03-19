@@ -111,11 +111,26 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
         totalPrice: calculateTotal()
       };
 
-      // Save order to local storage
-      const savedOrder = saveOrder(orderData);
+      // Generate order ID that will be used in both the local storage and email
+      const orderId = `${Date.now().toString().slice(-6)}`;
+      
+      // Update order data with the generated ID
+      const orderDataWithId = {
+        ...orderData,
+        id: orderId // Explicitly set the ID
+      };
+      
+      // Save order to local storage with our custom ID
+      const savedOrder = saveOrder(orderDataWithId);
 
+      // Update email data with the same order ID
+      const emailDataWithId = {
+        ...emailData,
+        orderId: orderId
+      };
+      
       // Send email notification
-      const emailSuccess = await sendOrderEmail(emailData);
+      const emailSuccess = await sendOrderEmail(emailDataWithId);
 
       // Show success message with order number
       toast({
@@ -123,7 +138,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
         description: (
           <div className="flex items-center">
             <CheckCircle className="ml-2 text-green-500" size={18} />
-            <span>{`رقم الطلب الخاص بك هو: ${savedOrder.id}. سيتم التواصل معك قريبًا لتأكيد الطلب.`}</span>
+            <span>{`رقم الطلب الخاص بك هو: ${orderId}. سيتم التواصل معك قريبًا لتأكيد الطلب. احتفظ بهذا الرقم للدخول إلى حسابك.`}</span>
           </div>
         ),
       });

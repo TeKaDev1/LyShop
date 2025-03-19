@@ -12,12 +12,13 @@ interface OrderEmailData {
   phone: string;
   productDetails: string;
   totalPrice: number;
+  orderId?: string; // Optional order ID that can be passed from OrderForm
 }
 
 export const sendOrderEmail = async (data: OrderEmailData): Promise<boolean> => {
   try {
-    // Generate order ID
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+    // Use provided order ID or generate one
+    const orderId = data.orderId ? data.orderId : `${Date.now().toString().slice(-6)}`;
     const orderDate = new Date().toLocaleDateString('ar-LY');
     const orderTime = new Date().toLocaleTimeString('ar-LY');
     
