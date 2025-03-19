@@ -4,7 +4,7 @@ import { sendOrderEmail } from '@/lib/emailjs';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react';
+import { CheckCircle, Plus, Minus, ShoppingCart, Trash2, Copy } from 'lucide-react';
 
 interface CartItem {
   product: Product;
@@ -132,13 +132,32 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
       // Send email notification
       const emailSuccess = await sendOrderEmail(emailDataWithId);
 
-      // Show success message with order number
+      // Function to copy order ID to clipboard and save to localStorage
+      const copyOrderId = () => {
+        navigator.clipboard.writeText(orderId);
+        localStorage.setItem('lastOrderId', orderId);
+        toast({
+          title: "تم نسخ رقم الطلب",
+          description: "تم نسخ رقم الطلب إلى الحافظة وحفظه للاستخدام عند تسجيل الدخول",
+        });
+      };
+
+      // Show success message with order number and copy button
       toast({
         title: "تم إرسال الطلب بنجاح!",
         description: (
-          <div className="flex items-center">
-            <CheckCircle className="ml-2 text-green-500" size={18} />
-            <span>{`رقم الطلب الخاص بك هو: ${orderId}. سيتم التواصل معك قريبًا لتأكيد الطلب. احتفظ بهذا الرقم للدخول إلى حسابك.`}</span>
+          <div>
+            <div className="flex items-center mb-2">
+              <CheckCircle className="ml-2 text-green-500" size={18} />
+              <span>{`رقم الطلب الخاص بك هو: ${orderId}. سيتم التواصل معك قريبًا لتأكيد الطلب.`}</span>
+            </div>
+            <button
+              onClick={copyOrderId}
+              className="flex items-center mt-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              <Copy size={14} className="ml-1" />
+              <span>نسخ رقم الطلب للدخول لاحقاً</span>
+            </button>
           </div>
         ),
       });

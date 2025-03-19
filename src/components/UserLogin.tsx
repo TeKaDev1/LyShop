@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { Phone, Package } from 'lucide-react';
+import { Phone, Package, Clipboard } from 'lucide-react';
 import { getOrders } from '@/lib/data';
 
 const UserLogin: React.FC = () => {
@@ -10,6 +10,35 @@ const UserLogin: React.FC = () => {
   const [orderId, setOrderId] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Load saved order ID from localStorage on component mount
+  useEffect(() => {
+    const savedOrderId = localStorage.getItem('lastOrderId');
+    if (savedOrderId) {
+      setOrderId(savedOrderId);
+    }
+  }, []);
+
+  // Function to paste from clipboard
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setOrderId(text);
+        toast({
+          title: "تم اللصق",
+          description: "تم لصق رقم الطلب من الحافظة",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to read clipboard contents: ', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في قراءة محتوى الحافظة",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,12 +152,20 @@ const UserLogin: React.FC = () => {
                 <input
                   id="orderId"
                   type="text"
-                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="block w-full rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 py-3 pr-10 pl-12 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   placeholder="مثال: 1001"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={pasteFromClipboard}
+                  className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 hover:text-primary"
+                  title="لصق رقم الطلب من الحافظة"
+                >
+                  <Clipboard size={18} />
+                </button>
               </div>
             </div>
 
