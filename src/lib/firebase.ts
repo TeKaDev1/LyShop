@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push, remove, get } from 'firebase/database';
 import { DeliveryZone, AdminCredentials, Product, Order } from '@/types';
-import { createHash } from 'crypto';
 
 const firebaseConfig = {
     apiKey: "AIzaSyAwvH0kCjpr5H2Wlqwpva0PC0vjxeIM46o",
@@ -99,17 +98,21 @@ export const deleteDeliveryZone = async (zoneId: string) => {
   await remove(zoneRef);
 };
 
-// وظائف التعامل مع بيانات اعتماد المسؤول
+// دالة لتوليد salt عشوائي
 const generateSalt = () => {
   return Math.random().toString(36).substring(2);
 };
 
-const hashPassword = (password: string, salt: string) => {
-  return createHash('sha256')
-    .update(password + salt)
-    .digest('hex');
+// دالة لتشفير كلمة المرور باستخدام Web Crypto API
+const hashPassword = async (password: string, salt: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
+// دالة للتحقق من بيانات اعتماد المسؤول
 export const verifyAdmin = async (username: string, password: string) => {
   const adminRef = ref(database, 'adminCredentials');
   const snapshot = await get(adminRef);
@@ -118,10 +121,11 @@ export const verifyAdmin = async (username: string, password: string) => {
   const admin = admins.find(a => a.username === username);
   if (!admin || !admin.salt || !admin.hashedPassword) return false;
 
-  const hashedPassword = hashPassword(password, admin.salt);
+  const hashedPassword = await hashPassword(password, admin.salt);
   return hashedPassword === admin.hashedPassword;
 };
 
+// دالة لتحديث كلمة مرور المسؤول
 export const updateAdminPassword = async (username: string, newPassword: string) => {
   const adminRef = ref(database, 'adminCredentials');
   const snapshot = await get(adminRef);
@@ -131,7 +135,7 @@ export const updateAdminPassword = async (username: string, newPassword: string)
   if (adminIndex === -1) return false;
 
   const salt = generateSalt();
-  const hashedPassword = hashPassword(newPassword, salt);
+  const hashedPassword = await hashPassword(newPassword, salt);
 
   admins[adminIndex] = {
     username,
