@@ -4,8 +4,14 @@ import './index.css'
 import { initializeData } from './lib/data'
 
 // Initialize data asynchronously to improve initial load time
-setTimeout(() => {
-  initializeData();
-}, 0);
+const init = async () => {
+  try {
+    await initializeData();
+  } catch (error) {
+    console.error('Failed to initialize data:', error);
+  }
+};
+
+init();
 
 createRoot(document.getElementById("root")!).render(<App />);

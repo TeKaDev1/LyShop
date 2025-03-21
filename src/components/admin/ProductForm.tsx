@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Product, Category, saveProduct } from '@/lib/data';
+import { Product, Category } from '@/types';
+import { saveProduct } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 import { Film, Image, Upload, X } from 'lucide-react';
-import { useForm } from 'react';
 
 interface ProductFormProps {
   product: Product | null;
@@ -41,17 +41,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null, null]);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
-
-  const { register, watch } = useForm<ProductFormData>({
-    defaultValues: {
-      name: product?.name,
-      price: product?.price,
-      category: product?.category,
-      images: product?.images || ['', '', '', '', '', ''],
-      description: product?.description || '',
-      discount: product?.discount,
-    },
-  });
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {

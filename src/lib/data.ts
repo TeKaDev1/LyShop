@@ -2,6 +2,45 @@ import { ref, set, get, push, remove } from 'firebase/database';
 import { database } from './firebase';
 import type { Product, Order, CreateOrderData, Category } from '@/types';
 
+// دالة لحذف منتج
+export const deleteProduct = async (productId: string): Promise<boolean> => {
+  try {
+    await remove(ref(database, `products/${productId}`));
+    return true;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    return false;
+  }
+};
+
+// دالة لحفظ منتج جديد
+export const saveProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
+  try {
+    const newProductRef = push(ref(database, 'products'));
+    const newProduct: Product = {
+      ...product,
+      id: newProductRef.key!
+    };
+    await set(newProductRef, newProduct);
+    return newProduct;
+  } catch (error) {
+    console.error('Error saving product:', error);
+    return null;
+  }
+};
+
+// بيانات المستخدمين الإداريين
+export const adminUsers = [
+  {
+    username: 'dkhil',
+    password: 'Mo090909'
+  },
+  {
+    username: 'teka',
+    password: 'Mo090909'
+  }
+];
+
 export async function getProducts(): Promise<Product[]> {
   try {
     const snapshot = await get(ref(database, 'products'));
@@ -162,4 +201,62 @@ export async function getCategories(): Promise<Category[]> {
     console.error('Error fetching categories:', error);
     return [];
   }
-} 
+}
+
+// دالة لحذف فئة
+export const deleteCategory = async (categoryId: string): Promise<boolean> => {
+  try {
+    await remove(ref(database, `categories/${categoryId}`));
+    return true;
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    return false;
+  }
+};
+
+// دالة لتهيئة البيانات الأولية
+export const initializeData = async (): Promise<void> => {
+  try {
+    // التحقق من وجود الفئات
+    const categoriesSnapshot = await get(ref(database, 'categories'));
+    if (!categoriesSnapshot.exists()) {
+      await set(ref(database, 'categories'), {});
+    }
+
+    // التحقق من وجود المنتجات
+    const productsSnapshot = await get(ref(database, 'products'));
+    if (!productsSnapshot.exists()) {
+      await set(ref(database, 'products'), {});
+    }
+
+    // التحقق من وجود الطلبات
+    const ordersSnapshot = await get(ref(database, 'orders'));
+    if (!ordersSnapshot.exists()) {
+      await set(ref(database, 'orders'), {});
+    }
+
+    // التحقق من وجود قائمة الرغبات
+    const wishlistsSnapshot = await get(ref(database, 'wishlists'));
+    if (!wishlistsSnapshot.exists()) {
+      await set(ref(database, 'wishlists'), {});
+    }
+  } catch (error) {
+    console.error('Error initializing data:', error);
+  }
+};
+
+// دالة لحفظ فئة جديدة
+export const saveCategory = async (category: Omit<Category, 'id'>): Promise<Category | null> => {
+  try {
+    const newCategoryRef = push(ref(database, 'categories'));
+    const newCategory: Category = {
+      ...category,
+      id: newCategoryRef.key!
+    };
+    await set(newCategoryRef, newCategory);
+    return newCategory;
+  } catch (error) {
+    console.error('Error saving category:', error);
+    return null;
+  }
+}; 
