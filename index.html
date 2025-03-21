@@ -16,6 +16,25 @@
     <meta property="og:description" content="متجر إلكتروني ليبي يقدم مجموعة واسعة من المنتجات بأسعار منافسة" />
     <meta property="og:url" content="https://tekadev1.vercel.app" />
     <!-- Load polyfills before any other scripts -->
+    <script>
+      // Inline polyfill to ensure slice method is available
+      if (typeof Object !== 'undefined' && !Object.prototype.hasOwnProperty('slice')) {
+        Object.defineProperty(Object.prototype, 'slice', {
+          value: function(start, end) {
+            if (Array.isArray(this)) {
+              return Array.prototype.slice.call(this, start, end);
+            }
+            if (typeof this === 'string') {
+              return String.prototype.slice.call(this, start, end);
+            }
+            const arr = Array.from(this || []);
+            return arr.slice(start, end);
+          },
+          writable: true,
+          configurable: true
+        });
+      }
+    </script>
     <script src="src/polyfill-loader.js"></script>
   </head>
 

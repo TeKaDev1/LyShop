@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "vite build && node copy-polyfills.js",
+    "build:dev": "vite build --mode development && node copy-polyfills.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
