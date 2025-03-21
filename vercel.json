@@ -1,20 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "installCommand": "npm install"
-      }
-    }
-  ],
   "rewrites": [
-    { "source": "/manifest.json", "destination": "/manifest.json" },
-    { "source": "/assets/:path*", "destination": "/assets/:path*" },
-    { "source": "/src/:path*", "destination": "/src/:path*" },
-    { "source": "/(.*\\.(js|css|svg|png|jpg|jpeg|gif|ico))", "destination": "/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
