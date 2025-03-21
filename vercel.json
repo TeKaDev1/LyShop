@@ -17,10 +17,6 @@
       "dest": "/index.html"
     }
   ],
-  "rules": {
-    ".read": true,
-    ".write": true
-  },
   "headers": [
     {
       "source": "/(.*)",
