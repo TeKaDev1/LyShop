@@ -214,6 +214,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
       // تجهيز تفاصيل المنتجات
       const orderProducts = cart.map(item => ({
         productId: item.product.id,
+        
         quantity: item.quantity
       }));
 
