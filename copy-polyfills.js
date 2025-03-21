@@ -22,12 +22,12 @@ if (!fs.existsSync('dist/src/lib')) {
   fs.mkdirSync('dist/src/lib');
 }
 
-// Copy polyfill-loader.js to dist/src
+// Copy polyfill-loader.js to dist root
 fs.copyFileSync(
   path.join(__dirname, 'src', 'polyfill-loader.js'),
-  path.join(__dirname, 'dist', 'src', 'polyfill-loader.js')
+  path.join(__dirname, 'dist', 'polyfill-loader.js')
 );
-console.log('Copied polyfill-loader.js to dist/src');
+console.log('Copied polyfill-loader.js to dist root');
 
 // Copy polyfills.ts to dist/src/lib
 fs.copyFileSync(
@@ -36,12 +36,9 @@ fs.copyFileSync(
 );
 console.log('Copied polyfills.ts to dist/src/lib');
 
-// Copy manifest.json to dist
-fs.copyFileSync(
-  path.join(__dirname, 'manifest.json'),
-  path.join(__dirname, 'dist', 'manifest.json')
-);
-console.log('Copied manifest.json to dist');
+// We no longer need to copy manifest.json from root as it's already in public
+// and will be copied by Vite automatically
+console.log('Using manifest.json from public directory');
 
 // Copy favicon files to dist
 if (fs.existsSync(path.join(__dirname, 'favicon.ico'))) {

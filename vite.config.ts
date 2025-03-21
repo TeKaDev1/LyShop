@@ -40,7 +40,12 @@ export default defineConfig(({ mode }) => ({
       'react',
       'react-dom',
       'react-router-dom',
+      '@radix-ui/react-context-menu',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tooltip',
     ],
+    force: true,
   },
   define: {
     // Fix for process is not defined
@@ -61,7 +66,11 @@ export default defineConfig(({ mode }) => ({
         // Ensure large chunks are split appropriately
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            // Group all React and related packages together
+            if (id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('react-router') ||
+                id.includes('@radix-ui')) {
               return 'vendor-react';
             }
             if (id.includes('firebase')) {
