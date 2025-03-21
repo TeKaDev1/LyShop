@@ -133,16 +133,22 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.slice(0, 8).map((product, index) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  index={index}
-                  onAddToCart={handleAddToCart}
-                  onAddToWishlist={handleAddToWishlist}
-                  isInWishlist={false}
-                />
-              ))}
+              {Array.isArray(products) && products.length > 0 ? (
+                products.slice(0, 8).map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={0}
+                    onAddToCart={() => handleAddToCart(product)}
+                    onAddToWishlist={() => handleAddToWishlist(product)}
+                    isInWishlist={false}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-gray-500">لا توجد منتجات متاحة حالياً</p>
+                </div>
+              )}
             </div>
           </div>
         </section>

@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => ({
     esbuildOptions: {
       target: 'es2020',
     },
+    include: ['buffer', 'crypto-browserify', 'stream-browserify'],
   },
   build: {
     // Output directory for production build
@@ -40,10 +41,25 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Ensure large chunks are split appropriately
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('buffer') || id.includes('crypto') || id.includes('stream')) {
+              return 'vendor-polyfills';
+            }
+            return 'vendor';
+          }
         },
       },
+    },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
     },
   },
   base: '/',

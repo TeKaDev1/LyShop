@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DarkModeProvider } from "@/lib/darkModeContext";
 import NotFound from "./components/NotFound";
-import { initializeFacebookPixel } from '@/lib/facebook';
+import { testPolyfills } from '@/lib/test-polyfills';
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -34,8 +34,8 @@ const queryClient = new QueryClient({
 
 const App = () => {
   useEffect(() => {
-    // تهيئة Facebook Pixel
-    initializeFacebookPixel();
+    // Test polyfills to ensure they're working
+    testPolyfills();
   }, []);
 
   return (

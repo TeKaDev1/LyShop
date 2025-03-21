@@ -8,12 +8,11 @@ import {
   generateCustomWhatsAppLink
 } from '@/lib/telegram';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, MessageCircle, ExternalLink, Trash2, Heart, Facebook } from 'lucide-react';
+import { ArrowRight, MessageCircle, ExternalLink, Trash2, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import FacebookMessageDialog from './FacebookMessageDialog';
 
 type OrderStatus = 'pending' | 'processing' | 'shipping' | 'delivered' | 'suspended';
 
@@ -27,7 +26,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isFacebookDialogOpen, setIsFacebookDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -78,12 +76,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
   const handleOpenDeleteDialog = (order: Order) => {
     setSelectedOrder(order);
     setIsDeleteDialogOpen(true);
-  };
-
-  // Handle opening the Facebook message dialog
-  const handleOpenFacebookDialog = (order: Order) => {
-    setSelectedOrder(order);
-    setIsFacebookDialogOpen(true);
   };
 
   // Handle delete order
@@ -288,15 +280,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
                   <ExternalLink className="h-4 w-4 ml-2" />
                   واتساب
                 </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleOpenFacebookDialog(order)}
-                >
-                  <Facebook className="h-4 w-4 ml-2" />
-                  ماسنجر
-                </Button>
                 
                 <Button
                   variant="outline"
@@ -404,13 +387,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
       </Dialog>
 
       {/* Facebook Message Dialog */}
-      {selectedOrder && (
-        <FacebookMessageDialog
-          order={selectedOrder}
-          isOpen={isFacebookDialogOpen}
-          onClose={() => setIsFacebookDialogOpen(false)}
-        />
-      )}
     </div>
   );
 };
