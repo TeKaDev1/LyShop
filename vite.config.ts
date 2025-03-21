@@ -11,11 +11,7 @@ export default defineConfig(({ mode }) => ({
     historyApiFallback: true,
   },
   plugins: [
-    react({
-      // Add this to ensure proper handling of polyfills
-      jsxImportSource: "@emotion/react",
-      plugins: [["@swc/plugin-emotion", {}]],
-    }),
+    react(),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
