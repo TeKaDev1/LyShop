@@ -23,6 +23,20 @@ const Index = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleAddToCart = (product: Product) => {
+    toast({
+      title: "تمت الإضافة",
+      description: "تم إضافة المنتج إلى السلة بنجاح",
+    });
+  };
+
+  const handleAddToWishlist = (product: Product) => {
+    toast({
+      title: "تمت الإضافة",
+      description: "تم إضافة المنتج إلى المفضلة بنجاح",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -119,8 +133,15 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {products.slice(0, 8).map((product, index) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  index={index}
+                  onAddToCart={handleAddToCart}
+                  onAddToWishlist={handleAddToWishlist}
+                  isInWishlist={false}
+                />
               ))}
             </div>
           </div>
