@@ -180,7 +180,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
     setCart(updatedCart);
     
     try {
-      // Update available products
+    // Update available products
       const products = await getProducts();
       const filteredProducts = products.filter(p => !updatedCart.some(item => item.product.id === p.id));
       setAvailableProducts(filteredProducts);
@@ -213,9 +213,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
       
       // تجهيز تفاصيل المنتجات
       const orderProducts = cart.map(item => ({
-        productId: item.product.id,
+          productId: item.product.id,
         
-        quantity: item.quantity
+          quantity: item.quantity
       }));
 
       const orderData: CreateOrderData = {
@@ -344,7 +344,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
@@ -352,7 +352,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
       >
         <div className="sticky top-0 bg-background p-4 border-b border-border flex justify-between items-center">
           <h2 className="text-xl font-bold">طلب المنتج</h2>
-          <button
+                <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
           >
@@ -360,8 +360,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
-        </div>
+                </button>
+            </div>
 
         {/* المنتجات المشابهة */}
         {similarProducts.length > 0 && (
@@ -385,58 +385,58 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                   isSelected={cart.some(item => item.product.id === similarProduct.id)}
                 />
               ))}
-            </div>
-          </div>
-        )}
+                      </div>
+                    </div>
+            )}
 
         {/* عرض المنتجات في السلة */}
         <div className="p-4 border-b border-border">
           <h3 className="text-lg font-semibold mb-3">المنتجات المختارة</h3>
-          <div className="space-y-3">
-            {cart.map((item, index) => (
+            <div className="space-y-3">
+              {cart.map((item, index) => (
               <div
-                key={item.product.id}
+                  key={item.product.id}
                 className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3"
-              >
+                >
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-500 font-medium">{index + 1}</span>
-                  <img
-                    src={item.product.images[0]}
-                    alt={item.product.name}
+                    <img
+                      src={item.product.images[0]}
+                      alt={item.product.name}
                     className="w-16 h-16 object-cover rounded-md"
                   />
                   <div>
                     <h4 className="font-medium">{item.product.name}</h4>
-                    <p className="text-primary font-bold">
-                      {item.product.price.toFixed(2)} د.ل
-                    </p>
+                      <p className="text-primary font-bold">
+                        {item.product.price.toFixed(2)} د.ل
+                      </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(index, item.quantity - 1)}
+                      <button
+                        onClick={() => updateQuantity(index, item.quantity - 1)}
                     className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                  >
+                      >
                     <Minus size={18} />
-                  </button>
+                      </button>
                   <span className="w-8 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(index, item.quantity + 1)}
+                      <button
+                        onClick={() => updateQuantity(index, item.quantity + 1)}
                     className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                  >
+                      >
                     <Plus size={18} />
-                  </button>
-                  <button
-                    onClick={() => removeFromCart(index)}
+                      </button>
+                      <button
+                        onClick={() => removeFromCart(index)}
                     className="p-1 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
+                      >
                     <Trash2 size={18} />
-                  </button>
+                      </button>
                 </div>
-              </div>
-            ))}
-          </div>
-          
+                  </div>
+              ))}
+            </div>
+
           {/* إجمالي السعر */}
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
             <div className="flex items-center justify-between">
@@ -497,7 +497,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
             )}
           </div>
 
-          <div>
+            <div>
             <label htmlFor="city" className="block text-sm font-medium mb-1">
               المدينة
             </label>
@@ -533,7 +533,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
             {errors.city && (
               <p className="mt-1 text-sm text-red-500">يرجى اختيار المدينة</p>
             )}
-          </div>
+            </div>
 
           {/* حقل المنطقة لطرابلس فقط */}
           {selectedCity === 'طرابلس' && (
@@ -572,15 +572,15 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
               {...register('notes')}
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/50"
               placeholder="أي ملاحظات إضافية حول الطلب"
-              rows={2}
-            />
-          </div>
+                rows={2}
+              />
+            </div>
 
-          <div>
+            <div>
             <label htmlFor="quantity" className="block text-sm font-medium mb-1">
               الكمية
             </label>
-            <input
+              <input
               type="number"
               id="quantity"
               {...register('quantity', { required: true, min: 1 })}
@@ -609,19 +609,19 @@ const OrderForm: React.FC<OrderFormProps> = ({ product, onClose }) => {
                 <span className="text-xl font-bold text-primary">{calculateTotal().toFixed(2)} د.ل</span>
               </div>
             </div>
-          </div>
+            </div>
 
           <div className="sticky bottom-0 bg-background pt-4 pb-safe-area-inset-bottom">
-            <button
-              type="submit"
-              disabled={loading}
+              <button
+                type="submit"
+                disabled={loading}
               className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? 'جاري الإرسال...' : 'تأكيد الطلب'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
+              </button>
+            </div>
+          </form>
+    </motion.div>
 
       <AnimatePresence>
         {showSuccess && (

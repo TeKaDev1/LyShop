@@ -1,19 +1,35 @@
-
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import ProductCard from '@/components/ProductCard';
 import { getProducts, initializeData } from '@/lib/data';
 import { ChevronLeft, ShoppingBag } from 'lucide-react';
+import { Product } from '@/types';
+import { subscribeToProducts } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  // Initialize sample data in local storage
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
   useEffect(() => {
-    initializeData();
+    const unsubscribe = subscribeToProducts((data) => {
+      setProducts(data || []);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const products = getProducts().slice(0, 3);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Layout>
@@ -102,9 +118,9 @@ const Index = () => {
               </Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
