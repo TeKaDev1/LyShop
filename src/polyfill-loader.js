@@ -1,40 +1,52 @@
 // This file is loaded first to ensure polyfills are available
 // before any other code runs
 
-// Ensure slice method is available on all objects
-if (typeof Object !== 'undefined' && !Object.prototype.hasOwnProperty('slice')) {
-  Object.defineProperty(Object.prototype, 'slice', {
-    value: function(start, end) {
-      if (Array.isArray(this)) {
-        return Array.prototype.slice.call(this, start, end);
-      }
-      if (typeof this === 'string') {
-        return String.prototype.slice.call(this, start, end);
-      }
-      const arr = Array.from(this || []);
+// Safely apply polyfills without modifying Object.prototype directly
+(function() {
+  // Create a safer version of the slice polyfill that doesn't modify Object.prototype
+  window._slicePolyfill = function(obj, start, end) {
+    if (!obj) return obj;
+    
+    if (Array.isArray(obj)) {
+      return Array.prototype.slice.call(obj, start, end);
+    }
+    if (typeof obj === 'string') {
+      return String.prototype.slice.call(obj, start, end);
+    }
+    try {
+      const arr = Array.from(obj || []);
       return arr.slice(start, end);
-    },
-    writable: true,
-    configurable: true
-  });
-}
-
-// Ensure Array.from handles objects without slice method
-if (typeof Array !== 'undefined' && Array.from) {
-  const originalArrayFrom = Array.from;
-  Array.from = function(...args) {
-    const result = originalArrayFrom.apply(this, args);
-    return result;
+    } catch (e) {
+      console.warn('Slice polyfill failed:', e);
+      return obj;
+    }
   };
-}
 
-// Ensure JSON.parse handles objects without slice method
-if (typeof JSON !== 'undefined' && JSON.parse) {
-  const originalJSONParse = JSON.parse;
-  JSON.parse = function(...args) {
-    const result = originalJSONParse.apply(this, args);
-    return result;
-  };
-}
+  // Safer version that doesn't interfere with React
+  if (typeof Array !== 'undefined' && Array.from) {
+    const originalArrayFrom = Array.from;
+    Array.from = function(...args) {
+      try {
+        return originalArrayFrom.apply(this, args);
+      } catch (e) {
+        console.warn('Array.from polyfill failed:', e);
+        return args[0] || [];
+      }
+    };
+  }
 
-console.log('Polyfills loaded successfully');
+  // Safer version that doesn't interfere with React
+  if (typeof JSON !== 'undefined' && JSON.parse) {
+    const originalJSONParse = JSON.parse;
+    JSON.parse = function(...args) {
+      try {
+        return originalJSONParse.apply(this, args);
+      } catch (e) {
+        console.warn('JSON.parse polyfill failed:', e);
+        throw e; // Re-throw to maintain expected behavior
+      }
+    };
+  }
+
+  console.log('Polyfills loaded successfully');
+})();

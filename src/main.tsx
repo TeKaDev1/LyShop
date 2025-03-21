@@ -1,29 +1,14 @@
-// Import polyfills first to ensure they're loaded before any other code
-import '../src/polyfill-loader.js'
-import './lib/polyfills'
+// Import React first to ensure it's available before anything else
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 
-// Ensure global objects have slice method
-if (typeof Object !== 'undefined' && !Object.prototype.hasOwnProperty('slice')) {
-  Object.defineProperty(Object.prototype, 'slice', {
-    value: function(start: number, end?: number) {
-      if (Array.isArray(this)) {
-        return Array.prototype.slice.call(this, start, end);
-      }
-      if (typeof this === 'string') {
-        return String.prototype.slice.call(this, start, end);
-      }
-      const arr = Array.from(this || []);
-      return arr.slice(start, end);
-    },
-    writable: true,
-    configurable: true
-  });
-}
+// Then import polyfills
+import './lib/polyfills';
 
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { initializeData } from './lib/data'
+// Import app components
+import App from './App.tsx';
+import './index.css';
+import { initializeData } from './lib/data';
 
 // Initialize data asynchronously to improve initial load time
 const init = async () => {
@@ -34,6 +19,24 @@ const init = async () => {
   }
 };
 
-init();
-
-createRoot(document.getElementById("root")!).render(<App />);
+// Make sure DOM is ready before rendering
+document.addEventListener('DOMContentLoaded', () => {
+  const rootElement = document.getElementById("root");
+  
+  if (!rootElement) {
+    console.error('Root element not found');
+    return;
+  }
+  
+  try {
+    init();
+    createRoot(rootElement).render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.log('React app rendered successfully');
+  } catch (error) {
+    console.error('Failed to render React app:', error);
+  }
+});

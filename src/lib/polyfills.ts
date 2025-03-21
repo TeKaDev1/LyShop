@@ -4,95 +4,91 @@ import { Buffer } from 'buffer';
 declare global {
   interface Window {
     Buffer: typeof Buffer;
-    slicePolyfill: (obj: any) => any;
+    _safeSlice: (obj: any, start: number, end?: number) => any;
   }
 }
 
-// Global polyfill for slice method
-function globalPolyfill() {
+// Safer polyfill implementation that doesn't modify Object.prototype
+(function() {
   if (typeof window === 'undefined') return;
 
   // Add Buffer to window
   window.Buffer = Buffer;
 
-  // Global slice polyfill that works with any object
-  window.slicePolyfill = function(obj: any) {
+  // Create a utility function for slicing any object without modifying prototypes
+  window._safeSlice = function(obj: any, start: number, end?: number): any {
     if (!obj) return obj;
     
-    // If it's already sliceable, return it
-    if (typeof obj.slice === 'function') return obj;
+    // If it already has a slice method, use it
+    if (typeof obj.slice === 'function') {
+      return obj.slice(start, end);
+    }
     
-    // Add slice method to the object
-    Object.defineProperty(obj, 'slice', {
-      value: function(start: number, end?: number) {
-        // If it's array-like, convert to array and slice
-        if (typeof this.length === 'number') {
-          const arr = Array.prototype.slice.call(this, 0);
-          return arr.slice(start, end);
-        }
-        
-        // If it's string-like, convert to string and slice
-        if (this.toString && typeof this.toString === 'function') {
-          const str = this.toString();
+    // Handle array-like objects
+    if (typeof obj.length === 'number') {
+      try {
+        const arr = Array.prototype.slice.call(obj, 0);
+        return arr.slice(start, end);
+      } catch (e) {
+        console.warn('Failed to slice array-like object:', e);
+      }
+    }
+    
+    // Handle string-like objects
+    if (obj.toString && typeof obj.toString === 'function') {
+      try {
+        const str = obj.toString();
+        if (typeof str.slice === 'function') {
           return str.slice(start, end);
         }
-        
-        // Default fallback
-        return Array.from(this).slice(start, end);
-      },
-      writable: true,
-      configurable: true
-    });
+      } catch (e) {
+        console.warn('Failed to slice string-like object:', e);
+      }
+    }
     
-    return obj;
+    // Last resort: try to convert to array
+    try {
+      const arr = Array.from(obj);
+      return arr.slice(start, end);
+    } catch (e) {
+      console.warn('Failed to convert to array for slicing:', e);
+      return obj; // Return original if all else fails
+    }
   };
 
-  // Patch Object prototype (dangerous but effective)
-  if (!Object.prototype.hasOwnProperty('slice')) {
-    Object.defineProperty(Object.prototype, 'slice', {
-      value: function(start: number, end?: number) {
-        return window.slicePolyfill(this).slice(start, end);
-      },
-      writable: true,
-      configurable: true
-    });
-  }
-
-  // Patch global fetch
-  const originalFetch = window.fetch;
-  if (originalFetch) {
-    window.fetch = function(...args) {
-      return originalFetch.apply(this, args).then((response) => {
-        window.slicePolyfill(response);
-        const originalJson = response.json;
-        if (originalJson) {
-          response.json = function() {
-            return originalJson.apply(this).then(window.slicePolyfill);
-          };
-        }
-        return response;
-      });
+  // Patch JSON.parse more safely
+  try {
+    const originalJSONParse = JSON.parse;
+    JSON.parse = function(...args) {
+      try {
+        return originalJSONParse.apply(this, args);
+      } catch (e) {
+        console.warn('JSON.parse error:', e);
+        throw e; // Re-throw to maintain expected behavior
+      }
     };
+  } catch (e) {
+    console.warn('Failed to patch JSON.parse:', e);
   }
 
-  // Patch JSON.parse
-  const originalJSONParse = JSON.parse;
-  JSON.parse = function(...args) {
-    const result = originalJSONParse.apply(this, args);
-    return window.slicePolyfill(result);
-  };
+  // Patch Array.from more safely
+  try {
+    if (Array.from) {
+      const originalArrayFrom = Array.from;
+      Array.from = function(...args) {
+        try {
+          return originalArrayFrom.apply(this, args);
+        } catch (e) {
+          console.warn('Array.from error:', e);
+          return args[0] || []; // Return original or empty array
+        }
+      };
+    }
+  } catch (e) {
+    console.warn('Failed to patch Array.from:', e);
+  }
 
-  // Patch Array.from
-  const originalArrayFrom = Array.from;
-  Array.from = function(...args) {
-    const result = originalArrayFrom.apply(this, args);
-    return window.slicePolyfill(result);
-  };
-
-  console.log('Global polyfills applied successfully');
-}
-
-// Apply polyfills immediately
-globalPolyfill();
+  console.log('Safe polyfills applied successfully');
+})();
 
 export {};
