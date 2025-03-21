@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polyfill Test</title>
+  <script src="src/polyfill-loader.js"></script>
+</head>
+<body>
+  <h1>Polyfill Test</h1>
+  <p>Open the console to see the test results.</p>
+
+  <script>
+    // Test function to verify polyfills
+    function testPolyfills() {
+      console.log('Testing polyfills...');
+      
+      // Test Object.slice
+      try {
+        const testObj = { 0: 'a', 1: 'b', 2: 'c', length: 3 };
+        console.log('Object slice test:', testObj.slice(0, 2));
+      } catch (error) {
+        console.error('Object slice test failed:', error);
+      }
+      
+      // Test Array.slice
+      try {
+        const testArray = [1, 2, 3, 4, 5];
+        console.log('Array slice test:', testArray.slice(1, 3));
+      } catch (error) {
+        console.error('Array slice test failed:', error);
+      }
+      
+      // Test String.slice
+      try {
+        const testString = 'Hello, World!';
+        console.log('String slice test:', testString.slice(0, 5));
+      } catch (error) {
+        console.error('String slice test failed:', error);
+      }
+      
+      console.log('Polyfill tests completed');
+    }
+
+    // Run tests
+    window.onload = testPolyfills;
+  </script>
+</body>
+</html>

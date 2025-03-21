@@ -11,7 +11,11 @@ export default defineConfig(({ mode }) => ({
     historyApiFallback: true,
   },
   plugins: [
-    react(),
+    react({
+      // Add this to ensure proper handling of polyfills
+      jsxImportSource: "@emotion/react",
+      plugins: [["@swc/plugin-emotion", {}]],
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -29,11 +33,16 @@ export default defineConfig(({ mode }) => ({
     },
     include: ['buffer', 'crypto-browserify', 'stream-browserify'],
   },
+  define: {
+    // Fix for process is not defined
+    'process.env': {},
+    'global': 'window',
+  },
   build: {
     // Output directory for production build
     outDir: 'dist',
     // Generate sourcemaps for better debugging
-    sourcemap: mode === 'development',
+    sourcemap: true, // Always generate sourcemaps for easier debugging
     // Ensure assets are correctly referenced
     assetsDir: 'assets',
     // Configure rollup options
@@ -55,6 +64,28 @@ export default defineConfig(({ mode }) => ({
             return 'vendor';
           }
         },
+        // Ensure proper format
+        format: 'es',
+        // Add intro to inject polyfills at the beginning of each chunk
+        intro: `
+          // Ensure slice method is available on all objects
+          if (!Object.prototype.hasOwnProperty('slice')) {
+            Object.defineProperty(Object.prototype, 'slice', {
+              value: function(start, end) {
+                if (Array.isArray(this)) {
+                  return Array.prototype.slice.call(this, start, end);
+                }
+                if (typeof this === 'string') {
+                  return String.prototype.slice.call(this, start, end);
+                }
+                const arr = Array.from(this || []);
+                return arr.slice(start, end);
+              },
+              writable: true,
+              configurable: true
+            });
+          }
+        `
       },
     },
     commonjsOptions: {
