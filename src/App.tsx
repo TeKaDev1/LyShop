@@ -1,10 +1,12 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DarkModeProvider } from "@/lib/darkModeContext";
+import NotFound from "./components/NotFound";
+import { initializeFacebookPixel } from '@/lib/facebook';
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -13,7 +15,6 @@ const ProductView = lazy(() => import("./pages/ProductView"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const UserAccount = lazy(() => import("./pages/UserAccount"));
-const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -31,31 +32,38 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <DarkModeProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/product/:id" element={<ProductView />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/user-account" element={<UserAccount />} />
-              <Route path="/user-login" element={<UserAccount />} />
-              {/* Redirect /user-dashboard to /user-account to ensure proper handling */}
-              <Route path="/user-dashboard" element={<UserAccount />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </DarkModeProvider>
-);
+const App = () => {
+  useEffect(() => {
+    // تهيئة Facebook Pixel
+    initializeFacebookPixel();
+  }, []);
+
+  return (
+    <DarkModeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/product/:id" element={<ProductView />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/user-account" element={<UserAccount />} />
+                <Route path="/user-login" element={<UserAccount />} />
+                {/* Redirect /user-dashboard to /user-account to ensure proper handling */}
+                <Route path="/user-dashboard" element={<UserAccount />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </DarkModeProvider>
+  );
+};
 
 export default App;

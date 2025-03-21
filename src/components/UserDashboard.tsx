@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getOrders, getProducts, Product, Order, addToWishlist, removeFromWishlist, getWishlist } from '@/lib/data';
+import { subscribeToOrders, subscribeToProducts } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
 import { ArrowRight, Package, ShoppingBag, LogOut, Heart, Plus, X } from 'lucide-react';
 import ProductCard from './ProductCard';
@@ -15,197 +16,117 @@ const UserDashboard: React.FC = () => {
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [showWishlistInput, setShowWishlistInput] = useState<boolean>(false);
   const [productIdInput, setProductIdInput] = useState<string>('');
+  const userPhone = sessionStorage.getItem('userPhone');
 
   useEffect(() => {
-    // Check if user is logged in - but don't navigate away
-    // The parent UserAccount component already handles conditional rendering
     const isLoggedIn = sessionStorage.getItem('userLoggedIn') === 'true';
-    const userId = sessionStorage.getItem('userId');
-    const userName = sessionStorage.getItem('userName');
-
-    if (!isLoggedIn || !userId) {
-      // Instead of navigating, we'll just return early and let the parent component handle it
-      setLoading(false);
+    if (!isLoggedIn || !userPhone) {
+      navigate('/user-login');
       return;
     }
 
-    // Show success notification when dashboard loads
-    toast({
-      title: "تم تسجيل الدخول بنجاح",
-      description: "مرحباً بك في لوحة التحكم الخاصة بك",
-      variant: "default",
+    // الاشتراك في تحديثات الطلبات
+    const unsubscribeOrders = subscribeToOrders((allOrders) => {
+      // تصفية الطلبات الخاصة بالمستخدم الحالي
+      const userSpecificOrders = allOrders.filter(order => 
+        order.phone.replace(/\D/g, '').includes(userPhone.replace(/\D/g, ''))
+      );
+      setUserOrders(userSpecificOrders);
     });
 
-    setUserName(userName || 'العميل');
+    // الاشتراك في تحديثات المنتجات
+    const unsubscribeProducts = subscribeToProducts((products) => {
+      // تحديث المنتجات الموصى بها
+      if (userOrders.length > 0) {
+        const orderedProductIds = userOrders.flatMap(order =>
+          order.products.map(p => p.productId)
+        );
 
-    // Get all user's orders with the same phone number
-    const orders = getOrders();
-    const userPhone = sessionStorage.getItem('userPhone');
-    const userOrders = orders.filter(order =>
-      order.phone.replace(/\D/g, '').includes(userPhone?.replace(/\D/g, '') || '')
-    );
+        const orderedProducts = products.filter(p =>
+          orderedProductIds.includes(p.id)
+        );
 
-    if (userOrders.length > 0) {
-      setUserOrders(userOrders);
-      
-      // Get product recommendations based on user's orders
-      const allProducts = getProducts();
-      
-      // Get all ordered product IDs from all orders
-      const orderedProductIds = userOrders.flatMap(order =>
-        order.products.map(p => p.productId)
-      );
-      
-      // Get ordered products
-      const orderedProducts = allProducts.filter(p =>
-        orderedProductIds.includes(p.id)
-      );
-      
-      // Get products from the same categories as ordered products
-      const orderedCategories = orderedProducts.map(p => p.category);
-      
-      // Filter products that are in the same categories but not already ordered
-      const recommendations = allProducts.filter(p =>
-        orderedCategories.includes(p.category) &&
-        !orderedProductIds.includes(p.id)
-      );
-      
-      // Limit to 4 recommendations
-      setRecommendedProducts(recommendations.slice(0, 4));
-      
-      // Load wishlist using the new getWishlist function
+        const orderedCategories = orderedProducts.map(p => p.category);
+        const recommendations = products.filter(p =>
+          orderedCategories.includes(p.category) &&
+          !orderedProductIds.includes(p.id)
+        );
+
+        setRecommendedProducts(recommendations.slice(0, 4));
+      }
+    });
+
+    // تحميل قائمة المفضلة
+    const loadWishlist = async () => {
       if (userPhone) {
         try {
-          const wishlistIds = getWishlist(userPhone);
+          const wishlistIds = await getWishlist(userPhone);
+          const allProducts = await getProducts();
           const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
           setWishlist(wishlistProducts);
         } catch (error) {
           console.error('Error loading wishlist:', error);
         }
       }
-    }
-    
+    };
+    loadWishlist();
+
+    setUserName(sessionStorage.getItem('userName') || 'العميل');
     setLoading(false);
-  }, [navigate]);
-  
-  // Add product to wishlist using the new function
-  const addProductToWishlist = (productId: string) => {
-    const allProducts = getProducts();
+
+    // تنظيف الاشتراكات عند تفكيك المكون
+    return () => {
+      unsubscribeOrders();
+      unsubscribeProducts();
+    };
+  }, [navigate, userPhone]);
+
+  const handleAddToWishlist = async (productId: string) => {
+    if (!userPhone) return;
     
-    // Try to find the product by exact ID first
-    let product = allProducts.find(p => p.id === productId);
-    
-    // If not found, try to find by partial ID match
-    if (!product) {
-      product = allProducts.find(p => p.id.includes(productId));
-    }
-    
-    // If still not found, try to find by name containing the input
-    if (!product) {
-      product = allProducts.find(p => p.name.includes(productId));
-    }
-    
-    if (!product) {
-      toast({
-        title: "خطأ",
-        description: "لم يتم العثور على المنتج. تأكد من إدخال رقم المنتج أو اسمه بشكل صحيح",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check if product is already in wishlist
-    if (wishlist.some(p => p.id === productId)) {
-      toast({
-        title: "تنبيه",
-        description: "المنتج موجود بالفعل في قائمة الرغبات",
-        variant: "default",
-      });
-      return;
-    }
-    
-    const userPhone = sessionStorage.getItem('userPhone');
-    if (!userPhone) {
-      toast({
-        title: "خطأ",
-        description: "لم يتم العثور على معلومات المستخدم",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Add to wishlist using the new function
-    const success = addToWishlist(userPhone, productId);
-    
-    if (success) {
-      // Update local state
-      setWishlist([...wishlist, product]);
+    try {
+      await addToWishlist(userPhone, productId);
+      const wishlistIds = await getWishlist(userPhone);
+      const allProducts = await getProducts();
+      const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+      setWishlist(wishlistProducts);
       
       toast({
-        title: "تمت الإضافة",
-        description: "تمت إضافة المنتج إلى قائمة الرغبات",
+        title: "تمت الإضافة بنجاح",
+        description: "تمت إضافة المنتج إلى قائمة المفضلة",
       });
-      
-      setProductIdInput('');
-      setShowWishlistInput(false);
-    } else {
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في إضافة المنتج إلى قائمة الرغبات",
+        title: "حدث خطأ",
+        description: "فشل في إضافة المنتج إلى قائمة المفضلة",
         variant: "destructive",
       });
-    }
-  };
-  
-  // Remove product from wishlist using the new function
-  const removeProductFromWishlist = (productId: string) => {
-    const userPhone = sessionStorage.getItem('userPhone');
-    if (!userPhone) {
-      toast({
-        title: "خطأ",
-        description: "لم يتم العثور على معلومات المستخدم",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Remove from wishlist using the new function
-    const success = removeFromWishlist(userPhone, productId);
-    
-    if (success) {
-      // Update local state
-      setWishlist(wishlist.filter(p => p.id !== productId));
-      
-      toast({
-        title: "تمت الإزالة",
-        description: "تمت إزالة المنتج من قائمة الرغبات",
-      });
-    } else {
-      toast({
-        title: "خطأ",
-        description: "فشل في إزالة المنتج من قائمة الرغبات",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Handle add to wishlist form submission
-  const handleAddToWishlist = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (productIdInput.trim()) {
-      const userPhone = sessionStorage.getItem('userPhone');
-      if (userPhone) {
-        addProductToWishlist(productIdInput.trim());
-      }
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('userLoggedIn');
-    sessionStorage.removeItem('userPhone');
-    sessionStorage.removeItem('userName');
-    sessionStorage.removeItem('userId');
-    navigate('/');
+  const handleRemoveFromWishlist = async (productId: string) => {
+    if (!userPhone) return;
+    
+    try {
+      await removeFromWishlist(userPhone, productId);
+      const wishlistIds = await getWishlist(userPhone);
+      const allProducts = await getProducts();
+      const wishlistProducts = allProducts.filter(p => wishlistIds.includes(p.id));
+      setWishlist(wishlistProducts);
+      
+      toast({
+        title: "تمت الإزالة بنجاح",
+        description: "تمت إزالة المنتج من قائمة المفضلة",
+      });
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast({
+        title: "حدث خطأ",
+        description: "فشل في إزالة المنتج من قائمة المفضلة",
+        variant: "destructive",
+      });
+    }
   };
 
   // Function to get status label in Arabic
@@ -253,7 +174,13 @@ const UserDashboard: React.FC = () => {
             <span>العودة للمتجر</span>
           </button>
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              sessionStorage.removeItem('userLoggedIn');
+              sessionStorage.removeItem('userPhone');
+              sessionStorage.removeItem('userName');
+              sessionStorage.removeItem('userId');
+              navigate('/');
+            }}
             className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
           >
             <LogOut size={18} className="ml-2" />
@@ -444,7 +371,7 @@ const UserDashboard: React.FC = () => {
         </div>
         
         {showWishlistInput && (
-          <form onSubmit={handleAddToWishlist} className="mb-6 flex">
+          <form onSubmit={(e) => { e.preventDefault(); if (productIdInput.trim()) handleAddToWishlist(productIdInput.trim()); }} className="mb-6 flex">
             <input
               type="text"
               value={productIdInput}
@@ -467,7 +394,7 @@ const UserDashboard: React.FC = () => {
               <div key={product.id} className="relative group overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
                 <div className="absolute top-2 left-2 z-10">
                   <button
-                    onClick={() => removeProductFromWishlist(product.id)}
+                    onClick={(e) => { e.preventDefault(); handleRemoveFromWishlist(product.id); }}
                     className="w-8 h-8 flex items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors"
                     aria-label="إزالة من قائمة الرغبات"
                   >
@@ -489,7 +416,7 @@ const UserDashboard: React.FC = () => {
                     <p className="text-primary font-bold">{product.price.toFixed(2)} د.ل</p>
                     
                     <button
-                      onClick={() => navigate(`/product/${product.id}`)}
+                      onClick={(e) => { e.preventDefault(); navigate(`/product/${product.id}`); }}
                       className="mt-auto w-full py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                       عرض المنتج

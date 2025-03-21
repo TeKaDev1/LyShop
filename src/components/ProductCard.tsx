@@ -1,15 +1,18 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Product } from '@/lib/data';
+import { Heart, ShoppingCart } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
   index: number;
+  onAddToCart: (product: Product) => void;
+  onAddToWishlist: (product: Product) => void;
+  isInWishlist: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, index, onAddToCart, onAddToWishlist, isInWishlist }) => {
   // Add safety check for product
   if (!product) {
     return null; // Don't render anything if product is undefined
@@ -21,11 +24,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
     name = 'Unnamed Product',
     price = 0,
     category = 'Uncategorized',
-    images = []
+    images = [],
+    discount
   } = product;
 
   // Ensure we have at least one image or use a placeholder
   const imageUrl = images && images.length > 0 ? images[0] : '/placeholder-image.jpg';
+
+  const calculateDiscountedPrice = (price: number, discount?: number): number => {
+    if (!discount) return price;
+    return price - (price * discount / 100);
+  };
 
   return (
     <motion.div
@@ -35,17 +44,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
       className="group relative rounded-2xl overflow-hidden hover-glow bg-white dark:bg-gray-800"
     >
       <Link to={`/product/${id}`}>
-        <div className="aspect-square overflow-hidden">
+        <div className="relative pb-[100%]">
           <img
             src={imageUrl}
             alt={name}
-            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
             loading="lazy"
             onError={(e) => {
               // Fallback if image fails to load
               e.currentTarget.src = '/placeholder-image.jpg';
             }}
           />
+          {discount && discount > 0 && (
+            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm">
+              خصم {discount}%
+            </div>
+          )}
         </div>
         
         <div className="p-4">
@@ -53,13 +67,50 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
             {category}
           </div>
           <h3 className="font-semibold text-lg mb-2 dark:text-white">{name}</h3>
-          <div className="flex justify-between items-center">
-            <p className="font-bold text-lg dark:text-white">
-              {typeof price === 'number' ? price.toFixed(2) : '0.00'} <span className="text-sm dark:text-gray-300">د.ل</span>
-            </p>
-            <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary dark:bg-primary/20">
-              عرض التفاصيل
-            </span>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              {discount && discount > 0 ? (
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold text-primary">
+                    {calculateDiscountedPrice(price, discount).toFixed(2)} د.ل
+                  </span>
+                  <span className="text-sm text-gray-500 line-through">
+                    {price.toFixed(2)} د.ل
+                  </span>
+                </div>
+              ) : (
+                <span className="text-lg font-bold text-primary">
+                  {price.toFixed(2)} د.ل
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToWishlist(product);
+                }}
+                className={`p-2 rounded-full transition-colors ${
+                  isInWishlist
+                    ? 'bg-red-100 text-red-500 dark:bg-red-900/20'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Heart
+                  size={20}
+                  className={isInWishlist ? 'fill-current' : ''}
+                />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart(product);
+                }}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <ShoppingCart size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </Link>

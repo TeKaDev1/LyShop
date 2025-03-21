@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    historyApiFallback: true,
   },
   plugins: [
     react(),
@@ -19,4 +20,26 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Output directory for production build
+    outDir: 'dist',
+    // Generate sourcemaps for better debugging
+    sourcemap: mode === 'development',
+    // Ensure assets are correctly referenced
+    assetsDir: 'assets',
+    // Configure rollup options
+    rollupOptions: {
+      output: {
+        // Ensure large chunks are split appropriately
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
+  base: '/',
+  preview: {
+    port: 8080,
+    historyApiFallback: true,
+  }
 }));

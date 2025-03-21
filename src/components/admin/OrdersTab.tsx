@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Order, updateOrderStatus, deleteOrder } from '@/lib/data';
+import { Order } from '@/types';
+import { updateOrderStatus, deleteOrder } from '@/lib/data';
 import {
   sendOrderProcessingNotification,
   sendOrderStatusNotification,
@@ -7,11 +8,14 @@ import {
   generateCustomWhatsAppLink
 } from '@/lib/telegram';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, MessageCircle, ExternalLink, Trash2, Heart } from 'lucide-react';
+import { ArrowRight, MessageCircle, ExternalLink, Trash2, Heart, Facebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import FacebookMessageDialog from './FacebookMessageDialog';
+
+type OrderStatus = 'pending' | 'processing' | 'shipping' | 'delivered' | 'suspended';
 
 interface OrdersTabProps {
   orders: Order[];
@@ -23,32 +27,44 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isFacebookDialogOpen, setIsFacebookDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [customMessage, setCustomMessage] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  const filteredOrders = selectedStatus === 'all'
+    ? orders
+    : orders.filter(order => order.status === selectedStatus);
 
   // Status options for the dropdown
   const statusOptions: Array<{
-    value: Order['status'];
+    value: OrderStatus;
     label: string;
     color: string;
   }> = [
-    { value: 'pending', label: 'معلق', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300' },
-    { value: 'processing', label: 'قيد المعالجة', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' },
-    { value: 'shipped', label: 'تم الشحن', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' },
-    { value: 'delivered', label: 'تم التسليم', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' },
-    { value: 'suspended', label: 'موقوف', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' }
+    { value: 'pending', label: 'قيد المراجعة', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300' },
+    { value: 'processing', label: 'قيد التجهيز', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' },
+    { value: 'shipping', label: 'جاري الشحن', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' },
+    { value: 'delivered', label: 'تم التوصيل', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' },
+    { value: 'suspended', label: 'معلق', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' }
   ];
 
   // Function to get status color based on status value
-  const getStatusColor = (status: Order['status']) => {
+  const getStatusColor = (status: string) => {
     const statusOption = statusOptions.find(option => option.value === status);
     return statusOption?.color || 'bg-gray-100 text-gray-800';
   };
 
   // Function to get status label based on status value
-  const getStatusLabel = (status: Order['status']) => {
-    const statusOption = statusOptions.find(option => option.value === status);
-    return statusOption?.label || status;
+  const getStatusLabel = (status: string): string => {
+    const statusLabels = {
+      pending: 'قيد المراجعة',
+      processing: 'قيد التجهيز',
+      shipping: 'جاري الشحن',
+      delivered: 'تم التوصيل',
+      suspended: 'معلق'
+    };
+    return statusLabels[status] || status;
   };
 
   // Handle opening the message dialog
@@ -64,12 +80,18 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
     setIsDeleteDialogOpen(true);
   };
 
+  // Handle opening the Facebook message dialog
+  const handleOpenFacebookDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setIsFacebookDialogOpen(true);
+  };
+
   // Handle delete order
-  const handleDeleteOrder = () => {
+  const handleDeleteOrder = async () => {
     if (!selectedOrder) return;
     
     try {
-      const success = deleteOrder(selectedOrder.id);
+      const success = await deleteOrder(selectedOrder.id);
       
       if (success) {
         toast({
@@ -140,20 +162,12 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
   };
 
   // Handle status change
-  const handleStatusChange = async (orderId: string, newStatus: string, order: Order) => {
+  const handleStatusChange = async (orderId: string, newStatus: Order['status']) => {
     try {
       setIsUpdating(true);
       
-      // Validate status before updating
-      if (!['pending', 'processing', 'shipped', 'delivered', 'suspended'].includes(newStatus)) {
-        throw new Error(`Invalid status: ${newStatus}`);
-      }
-      
       // Update order status
-      const updatedOrder = updateOrderStatus(
-        orderId,
-        newStatus as Order['status']
-      );
+      const updatedOrder = await updateOrderStatus(orderId, newStatus);
       
       if (!updatedOrder) {
         toast({
@@ -163,22 +177,15 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
         });
         return;
       }
-      
-      // Send Telegram notification for any status change
+
+      // Send Telegram notification
       try {
         if (newStatus === 'processing') {
-          // For processing status, use the detailed notification
-          await sendOrderProcessingNotification({
-            id: order.id,
-            customerName: order.customerName,
-            phone: order.phone,
-            totalPrice: order.totalPrice
-          });
+          await sendOrderProcessingNotification(updatedOrder);
         } else {
-          // For other statuses, use the generic status notification
           await sendOrderStatusNotification(
-            order.phone,
-            order.id,
+            updatedOrder.phone,
+            orderId,
             newStatus
           );
         }
@@ -196,12 +203,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
         });
       }
       
-      // Refresh orders list
-      refreshOrders();
-      
       toast({
         title: "تم تحديث الحالة",
-        description: `تم تغيير حالة الطلب إلى "${getStatusLabel(newStatus as Order['status'])}"`,
+        description: `تم تغيير حالة الطلب إلى "${getStatusLabel(newStatus)}"`,
       });
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -216,101 +220,98 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
   };
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold dark:text-white">الطلبات</h2>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">إدارة الطلبات</h2>
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="px-4 py-2 border rounded-lg"
         >
-          <ArrowRight size={18} className="ml-2" />
-          <span>العودة</span>
-        </button>
+          <option value="all">جميع الطلبات</option>
+          <option value="pending">قيد المراجعة</option>
+          <option value="processing">قيد التجهيز</option>
+          <option value="shipping">جاري الشحن</option>
+          <option value="delivered">تم التوصيل</option>
+          <option value="suspended">معلق</option>
+        </select>
       </div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-        {orders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-right py-3 px-4">رقم الطلب</th>
-                  <th className="text-right py-3 px-4">العميل</th>
-                  <th className="text-right py-3 px-4">المدينة</th>
-                  <th className="text-right py-3 px-4">رقم الهاتف</th>
-                  <th className="text-right py-3 px-4">المبلغ</th>
-                  <th className="text-right py-3 px-4">الحالة</th>
-                  <th className="text-right py-3 px-4">التاريخ</th>
-                  <th className="text-right py-3 px-4">قائمة الرغبات</th>
-                  <th className="text-right py-3 px-4">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="py-3 px-4">{order.id}</td>
-                    <td className="py-3 px-4">{order.customerName}</td>
-                    <td className="py-3 px-4">{order.city}</td>
-                    <td className="py-3 px-4">{order.phone}</td>
-                    <td className="py-3 px-4">{order.totalPrice.toFixed(2)} د.ل</td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => {
-                          // Validate that the value is a valid status
-                          const value = e.target.value;
-                          if (['pending', 'processing', 'shipped', 'delivered', 'suspended'].includes(value)) {
-                            handleStatusChange(order.id, value, order);
-                          }
-                        }}
-                        disabled={isUpdating}
-                        className={`px-2 py-1 rounded text-xs border ${getStatusColor(order.status)}`}
-                      >
-                        {statusOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">{order.date}</td>
-                    <td className="py-3 px-4 text-center">
-                      {order.hasWishlist ? (
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full" title="العميل لديه منتجات في قائمة الرغبات">
-                          <Heart size={16} />
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-600">-</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex space-x-2 space-x-reverse">
-                        <button
-                          onClick={() => handleOpenMessageDialog(order)}
-                          className="flex items-center px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-                          title="إرسال رسالة واتساب مخصصة"
-                        >
-                          <MessageCircle size={16} className="ml-1" />
-                          <span className="text-xs">واتساب</span>
-                        </button>
-                        <button
-                          onClick={() => handleOpenDeleteDialog(order)}
-                          className="flex items-center px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800/50 transition-colors"
-                          title="حذف الطلب"
-                        >
-                          <Trash2 size={16} className="ml-1" />
-                          <span className="text-xs">حذف</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+      <div className="grid gap-4">
+        {filteredOrders.map((order) => (
+          <div key={order.id} className="p-4 border rounded-lg">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold">{order.customerName}</h3>
+                <p className="text-muted-foreground">{order.phone}</p>
+                <p className="text-muted-foreground">{order.city} - {order.address}</p>
+              </div>
+              <select
+                value={order.status}
+                onChange={(e) => handleStatusChange(order.id, e.target.value as Order['status'])}
+                className="px-3 py-1 border rounded"
+              >
+                <option value="pending">قيد المراجعة</option>
+                <option value="processing">قيد التجهيز</option>
+                <option value="shipping">جاري الشحن</option>
+                <option value="delivered">تم التوصيل</option>
+                <option value="suspended">معلق</option>
+              </select>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="font-semibold mb-2">المنتجات:</h4>
+              {order.products.map((item, index) => (
+                <div key={index} className="flex justify-between items-center py-1">
+                  <span>{item.productId}</span>
+                  <span>الكمية: {item.quantity}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-4 flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenMessageDialog(order)}
+                >
+                  <MessageCircle className="h-4 w-4 ml-2" />
+                  تيليجرام
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(generateCustomWhatsAppLink(order.phone, ''), '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                  واتساب
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenFacebookDialog(order)}
+                >
+                  <Facebook className="h-4 w-4 ml-2" />
+                  ماسنجر
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenDeleteDialog(order)}
+                >
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  حذف
+                </Button>
+              </div>
+              
+              <span className="text-muted-foreground">{order.date}</span>
+            </div>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-center py-4">لا توجد طلبات حالياً</p>
-        )}
+        ))}
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -401,7 +402,16 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, refreshOrders }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+
+      {/* Facebook Message Dialog */}
+      {selectedOrder && (
+        <FacebookMessageDialog
+          order={selectedOrder}
+          isOpen={isFacebookDialogOpen}
+          onClose={() => setIsFacebookDialogOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 

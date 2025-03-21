@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Package, DollarSign, ShoppingBag } from 'lucide-react';
-import { Product, Order } from '@/lib/data';
+import type { Product, Order } from '@/types';
 
 interface OverviewTabProps {
   products: Product[];
@@ -84,7 +83,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ products, orders }) => {
                       }`}>
                         {order.status === 'pending' ? 'معلق' : 
                         order.status === 'processing' ? 'قيد المعالجة' :
-                        order.status === 'shipped' ? 'تم الشحن' : 'تم التسليم'}
+                        order.status === 'shipping' ? 'جاري الشحن' : 'تم التسليم'}
                       </span>
                     </td>
                     <td className="py-3 px-4 dark:text-gray-200">{order.totalPrice.toFixed(2)} د.ل</td>

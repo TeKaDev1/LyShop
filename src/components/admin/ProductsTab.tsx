@@ -1,14 +1,14 @@
-
 import React, { useState } from 'react';
 import { Plus, Edit, Trash, Search, Film } from 'lucide-react';
-import { Product, deleteProduct } from '@/lib/data';
+import { Product, deleteProduct, saveProduct } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 import ProductForm from './ProductForm';
 import { AnimatePresence } from 'framer-motion';
+import { Category } from '@/types';
 
 interface ProductsTabProps {
   products: Product[];
-  categories: any[];
+  categories: Category[];
   refreshProducts: () => void;
 }
 
@@ -16,38 +16,60 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ products, categories, refresh
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteProduct = (productId: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-      deleteProduct(productId);
-      refreshProducts();
+  const handleSaveProduct = async (product: Product) => {
+    try {
+      await saveProduct(product);
       toast({
-        title: "تم حذف المنتج",
-        description: "تم حذف المنتج بنجاح",
+        title: "تم حفظ المنتج بنجاح",
+        variant: "default",
+      });
+      setIsAddingProduct(false);
+      setSelectedProduct(null);
+      refreshProducts();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast({
+        title: "حدث خطأ أثناء حفظ المنتج",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+      toast({
+        title: "تم حذف المنتج بنجاح",
+        variant: "default",
+      });
+      refreshProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "حدث خطأ أثناء حذف المنتج",
+        variant: "destructive",
       });
     }
   };
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">المنتجات</h2>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">إدارة المنتجات</h2>
         <button
-          className="px-4 py-2 bg-primary text-white rounded-lg flex items-center hover:bg-primary/90 transition-colors"
-          onClick={() => {
-            setSelectedProduct(null);
-            setIsEditModalOpen(true);
-          }}
+          onClick={() => setIsAddingProduct(true)}
+          className="px-4 py-2 bg-primary text-white rounded-lg"
         >
-          <Plus size={18} className="ml-2" />
-          <span>إضافة منتج</span>
+          إضافة منتج جديد
         </button>
       </div>
-      
+
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
         <div className="mb-4">
           <div className="relative">
@@ -125,17 +147,27 @@ const ProductsTab: React.FC<ProductsTabProps> = ({ products, categories, refresh
         )}
       </div>
 
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <ProductForm 
-            product={selectedProduct} 
-            categories={categories}
-            onClose={() => setIsEditModalOpen(false)} 
-            onSave={refreshProducts}
-          />
-        )}
-      </AnimatePresence>
-    </>
+      {/* نموذج إضافة/تعديل المنتج */}
+      {(isAddingProduct || selectedProduct) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-background p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">
+              {selectedProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}
+            </h3>
+            <ProductForm 
+              product={selectedProduct} 
+              categories={categories}
+              onClose={() => {
+                setIsEditModalOpen(false);
+                setIsAddingProduct(false);
+                setSelectedProduct(null);
+              }}
+              onSave={handleSaveProduct}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

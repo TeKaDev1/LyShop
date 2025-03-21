@@ -1,15 +1,24 @@
-
 import React, { useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Product, Category, saveProduct } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
 import { Film, Image, Upload, X } from 'lucide-react';
+import { useForm } from 'react';
 
 interface ProductFormProps {
   product: Product | null;
   categories: Category[];
   onClose: () => void;
-  onSave: () => void;
+  onSave: (product: Product) => void;
+}
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: number;
+  discount?: number;
+  category: string;
+  images: string[];
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose, onSave }) => {
@@ -32,6 +41,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null, null]);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { register, watch } = useForm<ProductFormData>({
+    defaultValues: {
+      name: product?.name,
+      price: product?.price,
+      category: product?.category,
+      images: product?.images || ['', '', '', '', '', ''],
+      description: product?.description || '',
+      discount: product?.discount,
+    },
+  });
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -171,7 +191,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
 
       saveProduct(productToSave);
       
-      onSave();
+      onSave(productToSave);
       
       toast({
         title: product ? "تم تحديث المنتج" : "تم إضافة المنتج",
@@ -189,6 +209,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const calculateDiscountedPrice = (price: number, discount: number): number => {
+    return price - (price * discount / 100);
   };
 
   return (
@@ -266,6 +290,29 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, categories, onClose,
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
+            </div>
+
+            <div>
+              <label htmlFor="discount" className="block text-sm font-medium mb-1 dark:text-gray-200">
+                نسبة الخصم % (اختياري)
+              </label>
+              <input
+                id="discount"
+                name="discount"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={formData.discount || ''}
+                placeholder="أدخل نسبة الخصم (0-100)"
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 dark:bg-white dark:text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              {formData.discount && (
+                <div className="mt-2 text-sm text-green-600">
+                  السعر بعد الخصم: {calculateDiscountedPrice(formData.price || 0, formData.discount)} د.ل
+                </div>
+              )}
             </div>
 
             <div>

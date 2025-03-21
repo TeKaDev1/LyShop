@@ -93,10 +93,14 @@
   html {
     direction: rtl;
     scroll-behavior: smooth;
+    height: 100%;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   /* Glass Effect */
@@ -176,5 +180,83 @@
   
   .img-loaded {
     @apply opacity-100;
+  }
+
+  /* Fix for mobile keyboard issues */
+  html {
+    height: -webkit-fill-available;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Fix for iOS Safari viewport height */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Safe area insets for modern browsers */
+  .pb-safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Fix for floating forms */
+  .floating-form {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translate3d(0, 0, 0);
+    background-color: var(--background);
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Fix for mobile browsers */
+  @supports (-webkit-touch-callout: none) {
+    .floating-form {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+
+  /* Fix for mobile keyboard */
+  .keyboard-open {
+    padding-bottom: 0 !important;
+  }
+
+  /* Prevent content shift when keyboard opens */
+  .prevent-shift {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* إصلاح مشكلة التمرير عند التنقل */
+.page-container {
+  scroll-margin-top: 0;
+  scroll-behavior: auto;
+}
+
+/* تحسين التمرير على الأجهزة المحمولة */
+@media (max-width: 768px) {
+  .page-container {
+    scroll-padding-top: 0;
   }
 }

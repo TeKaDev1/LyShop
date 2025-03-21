@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getProducts, getOrders, getCategories, Product, Order, Category } from '@/lib/data';
+import { getProducts, getOrders, getCategories } from '@/lib/data';
+import { subscribeToProducts, subscribeToOrders, subscribeToDeliveryZones } from '@/lib/firebase';
+import { Product, Order, Category, DeliveryZone } from '@/types';
 
 // Import refactored components
 import Sidebar from './admin/Sidebar';
@@ -10,6 +11,7 @@ import OverviewTab from './admin/OverviewTab';
 import ProductsTab from './admin/ProductsTab';
 import CategoriesTab from './admin/CategoriesTab';
 import OrdersTab from './admin/OrdersTab';
+import DeliveryZonesTab from './admin/DeliveryZonesTab';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const AdminDashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
 
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
@@ -25,27 +28,35 @@ const AdminDashboard: React.FC = () => {
     }
   }, [navigate]);
 
-  const refreshData = async () => {
-    try {
-      // Initialize data to ensure we have products, orders, and categories
-      try {
-        // Initialize data from localStorage or defaults
-        const { initializeData } = await import('@/lib/data');
-        initializeData();
-      } catch (initError) {
-        console.error('Error initializing data:', initError);
-      }
-      
-      setProducts(getProducts());
-      setOrders(getOrders());
-      setCategories(getCategories());
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-    }
-  };
-
   useEffect(() => {
-    refreshData();
+    // الاشتراك في تحديثات المنتجات
+    const unsubscribeProducts = subscribeToProducts((updatedProducts) => {
+      setProducts(updatedProducts);
+    });
+
+    // الاشتراك في تحديثات الطلبات
+    const unsubscribeOrders = subscribeToOrders((updatedOrders) => {
+      setOrders(updatedOrders);
+    });
+
+    // الاشتراك في تحديثات مناطق التوصيل
+    const unsubscribeDeliveryZones = subscribeToDeliveryZones((updatedZones) => {
+      setDeliveryZones(updatedZones);
+    });
+
+    // تحميل التصنيفات
+    const loadCategories = async () => {
+      const fetchedCategories = await getCategories();
+      setCategories(fetchedCategories);
+    };
+    loadCategories();
+
+    // إلغاء الاشتراك عند تفكيك المكون
+    return () => {
+      unsubscribeProducts();
+      unsubscribeOrders();
+      unsubscribeDeliveryZones();
+    };
   }, []);
 
   const handleLogout = () => {
@@ -53,80 +64,87 @@ const AdminDashboard: React.FC = () => {
     navigate('/');
   };
 
+  const refreshProducts = async () => {
+    const updatedProducts = await getProducts();
+    setProducts(updatedProducts);
+  };
+
+  const refreshCategories = async () => {
+    const updatedCategories = await getCategories();
+    setCategories(updatedCategories);
+  };
+
+  const refreshOrders = async () => {
+    const updatedOrders = await getOrders();
+    setOrders(updatedOrders);
+  };
+
+  const refreshDeliveryZones = async () => {
+    // سيتم تحديث مناطق التوصيل تلقائياً من خلال الاشتراك
+  };
+
+  const calculateTotal = () => {
+    return orders.reduce((total, order) => total + order.totalPrice, 0);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-background">
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab}
+        setActiveTab={setActiveTab} 
         onLogout={handleLogout}
+        tabs={[
+          { id: 'overview', label: 'نظرة عامة' },
+          { id: 'products', label: 'المنتجات' },
+          { id: 'categories', label: 'التصنيفات' },
+          { id: 'orders', label: 'الطلبات' },
+          { id: 'delivery', label: 'مناطق التوصيل' }
+        ]}
       />
       
-      <div className="flex-1 p-4 md:p-6 overflow-auto">
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <OverviewTab products={products} orders={orders} />
-            </motion.div>
-          )}
-          
-          {activeTab === 'products' && (
-            <motion.div
-              key="products"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
+        <div className="container mx-auto px-6 py-8">
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && (
+              <OverviewTab key="overview" products={products} orders={orders} />
+            )}
+            {activeTab === 'products' && (
               <ProductsTab 
+                key="products" 
                 products={products} 
                 categories={categories} 
-                refreshProducts={() => setProducts(getProducts())} 
+                refreshProducts={refreshProducts}
               />
-            </motion.div>
-          )}
-          
-          {activeTab === 'categories' && (
-            <motion.div
-              key="categories"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+            )}
+            {activeTab === 'categories' && (
               <CategoriesTab 
+                key="categories" 
                 categories={categories} 
                 products={products}
-                refreshCategories={() => {
-                  setCategories(getCategories());
-                  // Also refresh products since they might reference categories
-                  setProducts(getProducts());
-                }} 
+                refreshCategories={refreshCategories}
               />
-            </motion.div>
-          )}
-          
-          {activeTab === 'orders' && (
-            <motion.div
-              key="orders"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <OrdersTab
+            )}
+            {activeTab === 'orders' && (
+              <OrdersTab 
+                key="orders" 
                 orders={orders}
-                refreshOrders={() => setOrders(getOrders())}
+                refreshOrders={refreshOrders}
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
+            {activeTab === 'delivery' && (
+              <DeliveryZonesTab
+                key="delivery"
+                zones={deliveryZones}
+                refreshZones={refreshDeliveryZones}
+              />
+            )}
+          </AnimatePresence>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold">الإجمالي:</span>
+            <span className="text-xl font-bold text-primary">{calculateTotal().toFixed(2)} د.ل</span>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

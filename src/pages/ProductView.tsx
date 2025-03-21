@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Layout from '@/components/Layout';
 import ProductDetail from '@/components/ProductDetail';
@@ -10,9 +9,22 @@ import { ChevronLeft, Home } from 'lucide-react';
 
 const ProductView = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showOrderForm, setShowOrderForm] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const utmSource = params.get('utm_source');
+    const utmMedium = params.get('utm_medium');
+    const utmCampaign = params.get('utm_campaign');
+
+    // Log or use the UTM parameters as needed
+    console.log('UTM Source:', utmSource);
+    console.log('UTM Medium:', utmMedium);
+    console.log('UTM Campaign:', utmCampaign);
+  }, [location]);
 
   useEffect(() => {
     // Fetch product details
