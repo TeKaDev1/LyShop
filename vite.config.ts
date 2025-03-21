@@ -19,6 +19,13 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       crypto: 'crypto-browserify',
+      stream: 'stream-browserify',
+      buffer: 'buffer',
+    },
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2020',
     },
   },
   build: {
@@ -29,6 +36,7 @@ export default defineConfig(({ mode }) => ({
     // Ensure assets are correctly referenced
     assetsDir: 'assets',
     // Configure rollup options
+    target: 'es2020',
     rollupOptions: {
       output: {
         // Ensure large chunks are split appropriately

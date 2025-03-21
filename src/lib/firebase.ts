@@ -3,13 +3,13 @@ import { getDatabase, ref, onValue, set, push, remove, get } from 'firebase/data
 import { DeliveryZone, AdminCredentials, Product, Order } from '@/types';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAwvH0kCjpr5H2Wlqwpva0PC0vjxeIM46o",
-    authDomain: "tekadev1.firebaseapp.com",
-    projectId: "tekadev1",
-    storageBucket: "tekadev1.firebasestorage.app",
-    messagingSenderId: "1003700748004",
-    appId: "1:1003700748004:web:ff23010162612fbef7f6f1",
-    databaseURL: "https://tekadev1-default-rtdb.europe-west1.firebasedatabase.app"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL
 };
 
 // تهيئة Firebase
@@ -100,7 +100,9 @@ export const deleteDeliveryZone = async (zoneId: string) => {
 
 // دالة لتوليد salt عشوائي
 const generateSalt = () => {
-  return Math.random().toString(36).substring(2);
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
 // دالة لتشفير كلمة المرور باستخدام Web Crypto API
